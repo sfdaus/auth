@@ -8,13 +8,14 @@ import (
 	"strings"
 	"testing"
 
+	httpDelivery "prakarsa-app/delivery/http"
+	"prakarsa-app/mocks"
+	"prakarsa-app/transport/request"
+
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	httpDelivery "github.com/syahidfrd/go-boilerplate/delivery/http"
-	"github.com/syahidfrd/go-boilerplate/mocks"
-	"github.com/syahidfrd/go-boilerplate/transport/request"
 )
 
 func TestAuthHandler_SignUp(t *testing.T) {

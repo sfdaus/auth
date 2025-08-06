@@ -17,6 +17,10 @@ definitions:
         type: string
       password:
         type: string
+      phone_number:
+        type: string
+      username:
+        type: string
     type: object
   request.UpdateTodoReq:
     properties:
@@ -45,7 +49,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       summary: SignIn
       tags:
       - Auth
@@ -65,7 +69,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       summary: SignUp
       tags:
       - Auth
@@ -78,7 +82,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - JwtToken: []
       summary: Fetch Todo
@@ -99,7 +103,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - JwtToken: []
       summary: Create Todo
@@ -120,7 +124,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - JwtToken: []
       summary: Delete Todo
@@ -140,7 +144,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - JwtToken: []
       summary: Get Todo
@@ -166,7 +170,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: ""
+          description: OK
       security:
       - JwtToken: []
       summary: Update Todo

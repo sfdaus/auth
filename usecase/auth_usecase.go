@@ -5,11 +5,11 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/syahidfrd/go-boilerplate/domain"
-	"github.com/syahidfrd/go-boilerplate/transport/request"
-	"github.com/syahidfrd/go-boilerplate/utils"
-	"github.com/syahidfrd/go-boilerplate/utils/crypto"
-	"github.com/syahidfrd/go-boilerplate/utils/jwt"
+	"prakarsa-app/domain"
+	"prakarsa-app/transport/request"
+	"prakarsa-app/utils"
+	"prakarsa-app/utils/crypto"
+	"prakarsa-app/utils/jwt"
 )
 
 type authUsecase struct {
@@ -38,7 +38,7 @@ func (u *authUsecase) SignUp(c context.Context, request *request.SignUpReq) (err
 		return
 	}
 
-	if user.ID != 0 {
+	if user.ID != "" {
 		err = utils.NewBadRequestError("email already registered")
 		return
 	}
@@ -51,8 +51,8 @@ func (u *authUsecase) SignUp(c context.Context, request *request.SignUpReq) (err
 	err = u.userRepo.Create(ctx, &domain.User{
 		Email:     request.Email,
 		Password:  passwordHash,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: time.Now().Unix(),
+		UpdatedAt: time.Now().Unix(),
 	})
 	return
 }

@@ -6,9 +6,11 @@ import (
 	"testing"
 	"time"
 
+	"prakarsa-app/domain"
+	"prakarsa-app/repository/pgsql"
+	"prakarsa-app/utils"
+
 	"github.com/stretchr/testify/assert"
-	"github.com/syahidfrd/go-boilerplate/domain"
-	"github.com/syahidfrd/go-boilerplate/repository/pgsql"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
 )
 
@@ -16,8 +18,8 @@ func TestUserRepo_Create(t *testing.T) {
 	user := &domain.User{
 		Email:     "sample@mail.com",
 		Password:  "randomPasswordHash",
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: time.Now().Unix(),
+		UpdatedAt: time.Now().Unix(),
 	}
 
 	db, mock, err := sqlmock.New()
@@ -45,11 +47,11 @@ func TestUserRepo_GetByEmail(t *testing.T) {
 	defer db.Close()
 
 	userMock := domain.User{
-		ID:        1,
+		ID:        utils.GenerateUUID(),
 		Email:     "sample@mail.com",
 		Password:  "randomPasswordHash",
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: time.Now().Unix(),
+		UpdatedAt: time.Now().Unix(),
 	}
 
 	rows := sqlmock.NewRows([]string{"id", "email", "password", "created_at", "updated_at"}).

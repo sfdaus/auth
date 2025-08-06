@@ -6,9 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"prakarsa-app/domain"
+	"prakarsa-app/repository/pgsql"
+
 	"github.com/stretchr/testify/assert"
-	"github.com/syahidfrd/go-boilerplate/domain"
-	"github.com/syahidfrd/go-boilerplate/repository/pgsql"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
 )
 

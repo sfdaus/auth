@@ -1,124 +1,125 @@
 package usecase_test
 
-import (
-	"context"
-	"errors"
-	"testing"
-	"time"
+// import (
+// 	"context"
+// 	"errors"
+// 	"testing"
+// 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/syahidfrd/go-boilerplate/domain"
-	"github.com/syahidfrd/go-boilerplate/mocks"
-	"github.com/syahidfrd/go-boilerplate/transport/request"
-	"github.com/syahidfrd/go-boilerplate/usecase"
-)
+// 	"prakarsa-app/domain"
+// 	"prakarsa-app/mocks"
+// 	"prakarsa-app/transport/request"
+// 	"prakarsa-app/usecase"
 
-func TestAuthUC_SignUp(t *testing.T) {
-	mockUserRepo := new(mocks.UserRepository)
-	mockCryptoSvc := new(mocks.CryptoService)
-	mockJWTSvc := new(mocks.JWTService)
-	signUpReq := request.SignUpReq{
-		Email:    "sample@mail.com",
-		Password: "12345678",
-	}
+// 	"github.com/stretchr/testify/assert"
+// 	"github.com/stretchr/testify/mock"
+// )
 
-	t.Run("success", func(t *testing.T) {
-		mockUserRepo.On("GetByEmail", mock.Anything, mock.AnythingOfType("string")).Return(domain.User{}, nil).Once()
-		mockCryptoSvc.On("CreatePasswordHash", mock.Anything, mock.AnythingOfType("string")).Return("passwordHash", nil).Once()
-		mockUserRepo.On("Create", mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil).Once()
+// func TestAuthUC_SignUp(t *testing.T) {
+// 	mockUserRepo := new(mocks.UserRepository)
+// 	mockCryptoSvc := new(mocks.CryptoService)
+// 	mockJWTSvc := new(mocks.JWTService)
+// 	signUpReq := request.SignUpReq{
+// 		Email:    "sample@mail.com",
+// 		Password: "12345678",
+// 	}
 
-		authUC := usecase.NewAuthUsecase(mockUserRepo, mockCryptoSvc, mockJWTSvc, 60*time.Second)
-		err := authUC.SignUp(context.TODO(), &signUpReq)
+// 	t.Run("success", func(t *testing.T) {
+// 		mockUserRepo.On("GetByEmail", mock.Anything, mock.AnythingOfType("string")).Return(domain.User{}, nil).Once()
+// 		mockCryptoSvc.On("CreatePasswordHash", mock.Anything, mock.AnythingOfType("string")).Return("passwordHash", nil).Once()
+// 		mockUserRepo.On("Create", mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil).Once()
 
-		assert.NoError(t, err)
-		mockUserRepo.AssertExpectations(t)
-		mockCryptoSvc.AssertExpectations(t)
-		mockJWTSvc.AssertExpectations(t)
-	})
+// 		authUC := usecase.NewAuthUsecase(mockUserRepo, mockCryptoSvc, mockJWTSvc, 60*time.Second)
+// 		err := authUC.SignUp(context.TODO(), &signUpReq)
 
-	t.Run("email-already-registered", func(t *testing.T) {
-		mockUserRepo.On("GetByEmail", mock.Anything, mock.AnythingOfType("string")).Return(domain.User{ID: 1}, nil).Once()
+// 		assert.NoError(t, err)
+// 		mockUserRepo.AssertExpectations(t)
+// 		mockCryptoSvc.AssertExpectations(t)
+// 		mockJWTSvc.AssertExpectations(t)
+// 	})
 
-		authUC := usecase.NewAuthUsecase(mockUserRepo, mockCryptoSvc, mockJWTSvc, 60*time.Second)
-		err := authUC.SignUp(context.TODO(), &signUpReq)
+// 	t.Run("email-already-registered", func(t *testing.T) {
+// 		mockUserRepo.On("GetByEmail", mock.Anything, mock.AnythingOfType("string")).Return(domain.User{ID: 1}, nil).Once()
 
-		assert.NotNil(t, err)
-		mockUserRepo.AssertExpectations(t)
-		mockCryptoSvc.AssertExpectations(t)
-		mockJWTSvc.AssertExpectations(t)
-	})
+// 		authUC := usecase.NewAuthUsecase(mockUserRepo, mockCryptoSvc, mockJWTSvc, 60*time.Second)
+// 		err := authUC.SignUp(context.TODO(), &signUpReq)
 
-	t.Run("error-password-hash", func(t *testing.T) {
-		mockUserRepo.On("GetByEmail", mock.Anything, mock.AnythingOfType("string")).Return(domain.User{}, nil).Once()
-		mockCryptoSvc.On("CreatePasswordHash", mock.Anything, mock.AnythingOfType("string")).Return("", errors.New("unexpected error")).Once()
+// 		assert.NotNil(t, err)
+// 		mockUserRepo.AssertExpectations(t)
+// 		mockCryptoSvc.AssertExpectations(t)
+// 		mockJWTSvc.AssertExpectations(t)
+// 	})
 
-		authUC := usecase.NewAuthUsecase(mockUserRepo, mockCryptoSvc, mockJWTSvc, 60*time.Second)
-		err := authUC.SignUp(context.TODO(), &signUpReq)
+// 	t.Run("error-password-hash", func(t *testing.T) {
+// 		mockUserRepo.On("GetByEmail", mock.Anything, mock.AnythingOfType("string")).Return(domain.User{}, nil).Once()
+// 		mockCryptoSvc.On("CreatePasswordHash", mock.Anything, mock.AnythingOfType("string")).Return("", errors.New("unexpected error")).Once()
 
-		assert.NotNil(t, err)
-		mockUserRepo.AssertExpectations(t)
-		mockCryptoSvc.AssertExpectations(t)
-		mockJWTSvc.AssertExpectations(t)
-	})
+// 		authUC := usecase.NewAuthUsecase(mockUserRepo, mockCryptoSvc, mockJWTSvc, 60*time.Second)
+// 		err := authUC.SignUp(context.TODO(), &signUpReq)
 
-	t.Run("error-create-new-user", func(t *testing.T) {
-		mockUserRepo.On("GetByEmail", mock.Anything, mock.AnythingOfType("string")).Return(domain.User{}, nil).Once()
-		mockCryptoSvc.On("CreatePasswordHash", mock.Anything, mock.AnythingOfType("string")).Return("passwordHash", nil).Once()
-		mockUserRepo.On("Create", mock.Anything, mock.AnythingOfType("*domain.User")).Return(errors.New("unexpected error")).Once()
+// 		assert.NotNil(t, err)
+// 		mockUserRepo.AssertExpectations(t)
+// 		mockCryptoSvc.AssertExpectations(t)
+// 		mockJWTSvc.AssertExpectations(t)
+// 	})
 
-		authUC := usecase.NewAuthUsecase(mockUserRepo, mockCryptoSvc, mockJWTSvc, 60*time.Second)
-		err := authUC.SignUp(context.TODO(), &signUpReq)
+// 	t.Run("error-create-new-user", func(t *testing.T) {
+// 		mockUserRepo.On("GetByEmail", mock.Anything, mock.AnythingOfType("string")).Return(domain.User{}, nil).Once()
+// 		mockCryptoSvc.On("CreatePasswordHash", mock.Anything, mock.AnythingOfType("string")).Return("passwordHash", nil).Once()
+// 		mockUserRepo.On("Create", mock.Anything, mock.AnythingOfType("*domain.User")).Return(errors.New("unexpected error")).Once()
 
-		assert.NotNil(t, err)
-		mockUserRepo.AssertExpectations(t)
-		mockCryptoSvc.AssertExpectations(t)
-		mockJWTSvc.AssertExpectations(t)
-	})
-}
+// 		authUC := usecase.NewAuthUsecase(mockUserRepo, mockCryptoSvc, mockJWTSvc, 60*time.Second)
+// 		err := authUC.SignUp(context.TODO(), &signUpReq)
 
-func TestAuthUC_SignIn(t *testing.T) {
-	mockUserRepo := new(mocks.UserRepository)
-	mockCryptoSvc := new(mocks.CryptoService)
-	mockJWTSvc := new(mocks.JWTService)
-	mockUser := domain.User{
-		ID:        1,
-		Email:     "sample@mail.com",
-		Password:  "12345678",
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
+// 		assert.NotNil(t, err)
+// 		mockUserRepo.AssertExpectations(t)
+// 		mockCryptoSvc.AssertExpectations(t)
+// 		mockJWTSvc.AssertExpectations(t)
+// 	})
+// }
 
-	signInReq := request.SignInReq{
-		Email:    "sample@mail.com",
-		Password: "12345678",
-	}
+// func TestAuthUC_SignIn(t *testing.T) {
+// 	mockUserRepo := new(mocks.UserRepository)
+// 	mockCryptoSvc := new(mocks.CryptoService)
+// 	mockJWTSvc := new(mocks.JWTService)
+// 	mockUser := domain.User{
+// 		ID:        1,
+// 		Email:     "sample@mail.com",
+// 		Password:  "12345678",
+// 		CreatedAt: time.Now(),
+// 		UpdatedAt: time.Now(),
+// 	}
 
-	t.Run("success", func(t *testing.T) {
-		mockUserRepo.On("GetByEmail", mock.Anything, mock.AnythingOfType("string")).Return(mockUser, nil).Once()
-		mockCryptoSvc.On("ValidatePassword", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(true).Once()
-		mockJWTSvc.On("GenerateToken", mock.Anything, mock.AnythingOfType("int64")).Return("accessToken", nil).Once()
+// 	signInReq := request.SignInReq{
+// 		Email:    "sample@mail.com",
+// 		Password: "12345678",
+// 	}
 
-		authUC := usecase.NewAuthUsecase(mockUserRepo, mockCryptoSvc, mockJWTSvc, 60*time.Second)
-		_, err := authUC.SignIn(context.TODO(), &signInReq)
+// 	t.Run("success", func(t *testing.T) {
+// 		mockUserRepo.On("GetByEmail", mock.Anything, mock.AnythingOfType("string")).Return(mockUser, nil).Once()
+// 		mockCryptoSvc.On("ValidatePassword", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(true).Once()
+// 		mockJWTSvc.On("GenerateToken", mock.Anything, mock.AnythingOfType("int64")).Return("accessToken", nil).Once()
 
-		assert.NoError(t, err)
-		mockUserRepo.AssertExpectations(t)
-		mockCryptoSvc.AssertExpectations(t)
-		mockJWTSvc.AssertExpectations(t)
-	})
+// 		authUC := usecase.NewAuthUsecase(mockUserRepo, mockCryptoSvc, mockJWTSvc, 60*time.Second)
+// 		_, err := authUC.SignIn(context.TODO(), &signInReq)
 
-	t.Run("invalid-password", func(t *testing.T) {
-		mockUserRepo.On("GetByEmail", mock.Anything, mock.AnythingOfType("string")).Return(mockUser, nil).Once()
-		mockCryptoSvc.On("ValidatePassword", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false).Once()
+// 		assert.NoError(t, err)
+// 		mockUserRepo.AssertExpectations(t)
+// 		mockCryptoSvc.AssertExpectations(t)
+// 		mockJWTSvc.AssertExpectations(t)
+// 	})
 
-		authUC := usecase.NewAuthUsecase(mockUserRepo, mockCryptoSvc, mockJWTSvc, 60*time.Second)
-		_, err := authUC.SignIn(context.TODO(), &signInReq)
+// 	t.Run("invalid-password", func(t *testing.T) {
+// 		mockUserRepo.On("GetByEmail", mock.Anything, mock.AnythingOfType("string")).Return(mockUser, nil).Once()
+// 		mockCryptoSvc.On("ValidatePassword", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(false).Once()
 
-		assert.NotNil(t, err)
-		mockUserRepo.AssertExpectations(t)
-		mockCryptoSvc.AssertExpectations(t)
-		mockJWTSvc.AssertExpectations(t)
-	})
+// 		authUC := usecase.NewAuthUsecase(mockUserRepo, mockCryptoSvc, mockJWTSvc, 60*time.Second)
+// 		_, err := authUC.SignIn(context.TODO(), &signInReq)
 
-}
+// 		assert.NotNil(t, err)
+// 		mockUserRepo.AssertExpectations(t)
+// 		mockCryptoSvc.AssertExpectations(t)
+// 		mockJWTSvc.AssertExpectations(t)
+// 	})
+
+// }

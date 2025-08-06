@@ -3,8 +3,9 @@ package jwt
 import (
 	"context"
 	"fmt"
-	"github.com/golang-jwt/jwt"
 	"time"
+
+	"github.com/golang-jwt/jwt"
 )
 
 type jwtService struct {
@@ -19,7 +20,7 @@ func NewJWTService(secretKey string) JWTService {
 	}
 }
 
-func (s *jwtService) GenerateToken(ctx context.Context, userID int64) (token string, err error) {
+func (s *jwtService) GenerateToken(ctx context.Context, userID string) (token string, err error) {
 	claims := &jwtCustomClaims{
 		userID,
 		jwt.StandardClaims{

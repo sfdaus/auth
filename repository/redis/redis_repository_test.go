@@ -5,10 +5,11 @@ import (
 	"testing"
 	"time"
 
+	redisRepo "prakarsa-app/repository/redis"
+
 	"github.com/alicebob/miniredis"
 	"github.com/go-redis/redis"
 	"github.com/stretchr/testify/assert"
-	redisRepo "github.com/syahidfrd/go-boilerplate/repository/redis"
 )
 
 func SetupRedis() redisRepo.RedisRepository {

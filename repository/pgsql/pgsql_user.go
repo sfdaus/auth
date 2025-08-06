@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/syahidfrd/go-boilerplate/domain"
+	"prakarsa-app/domain"
 )
 
 type pgsqlUserRepository struct {
@@ -18,13 +18,25 @@ func NewPgsqlUserRepository(db *sql.DB) *pgsqlUserRepository {
 }
 
 func (r *pgsqlUserRepository) Create(ctx context.Context, user *domain.User) (err error) {
-	query := "INSERT INTO users (email, password, created_at, updated_at) VALUES ($1, $2, $3, $4)"
-	_, err = r.db.ExecContext(ctx, query, user.Email, user.Password, user.CreatedAt, user.UpdatedAt)
+	query := "INSERT INTO users (id, password, username, phone_number, email, token_version, is_active, created_at, created_by, updated_at, updated_by, deleted_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)"
+	_, err = r.db.ExecContext(ctx, query, user.ID, user.Password, user.Username, user.PhoneNumber, user.Email, user.TokenVersion, user.IsActive, user.CreatedAt, user.CreatedBy, user.UpdatedAt, user.UpdatedBy, user.DeletedAt)
 	return
 }
 
 func (r *pgsqlUserRepository) GetByEmail(ctx context.Context, email string) (user domain.User, err error) {
-	query := "SELECT id, email, password, created_at, updated_at FROM users WHERE email = $1"
-	err = r.db.QueryRowContext(ctx, query, email).Scan(&user.ID, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt)
+	query := "SELECT id, email, password, is_active, deleted_at FROM users WHERE email = $1"
+	err = r.db.QueryRowContext(ctx, query, email).Scan(&user.ID, &user.Email, &user.Password, &user.IsActive, &user.DeletedAt)
+	return
+}
+
+func (r *pgsqlUserRepository) GetByUsername(ctx context.Context, username string) (user domain.User, err error) {
+	query := "SELECT id, username, password, is_active, deleted_at FROM users WHERE email = $1"
+	err = r.db.QueryRowContext(ctx, query, username).Scan(&user.ID, &user.Username, &user.Password, &user.IsActive, &user.DeletedAt)
+	return
+}
+
+func (r *pgsqlUserRepository) GetByPhoneNumber(ctx context.Context, phoneNumber string) (user domain.User, err error) {
+	query := "SELECT id, phone_number, password, is_active, deleted_at FROM users WHERE email = $1"
+	err = r.db.QueryRowContext(ctx, query, phoneNumber).Scan(&user.ID, &user.PhoneNumber, &user.Password, &user.IsActive, &user.DeletedAt)
 	return
 }
