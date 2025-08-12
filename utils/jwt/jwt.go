@@ -16,17 +16,18 @@ type jwtService struct {
 func NewJWTService(secretKey string) JWTService {
 	return &jwtService{
 		secretKey: secretKey,
-		issuer:    "go-boilerplate",
+		issuer:    "auth",
 	}
 }
 
-func (s *jwtService) GenerateToken(ctx context.Context, userID string) (token string, err error) {
+func (s *jwtService) GenerateToken(ctx context.Context, userID string, tokenVersion string) (token string, err error) {
 	claims := &jwtCustomClaims{
 		userID,
 		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Hour * 72).Unix(),
-			Issuer:    s.issuer,
-			IssuedAt:  time.Now().Unix(),
+			TokenVersion: tokenVersion,
+			ExpiresAt:    time.Now().Add(time.Hour * 72).Unix(),
+			Issuer:       s.issuer,
+			IssuedAt:     time.Now().Unix(),
 		},
 	}
 

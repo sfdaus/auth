@@ -18,7 +18,6 @@ import (
 	appMiddleware "prakarsa-app/delivery/middleware"
 	"prakarsa-app/infrastructure/datastore"
 	pgsqlRepository "prakarsa-app/repository/pgsql"
-	redisRepository "prakarsa-app/repository/redis"
 	"prakarsa-app/usecase"
 
 	"github.com/labstack/echo/v4"
@@ -40,12 +39,11 @@ func main() {
 	dbInstance, err := datastore.NewDatabase(configApp.DatabaseURL)
 	utils.PanicIfNeeded(err)
 
-	cacheInstance, err := datastore.NewCache(configApp.CacheURL)
+	// cacheInstance, err := datastore.NewCache(configApp.CacheURL)
 	utils.PanicIfNeeded(err)
 
 	// Setup repository
-	redisRepo := redisRepository.NewRedisRepository(cacheInstance)
-	todoRepo := pgsqlRepository.NewPgsqlTodoRepository(dbInstance)
+	// redisRepo := redisRepository.NewRedisRepository(cacheInstance)
 	userRepo := pgsqlRepository.NewPgsqlUserRepository(dbInstance)
 
 	// Setup Service
@@ -54,9 +52,8 @@ func main() {
 
 	// Setup usecase
 	ctxTimeout := time.Duration(configApp.ContextTimeout) * time.Second
-	todoUC := usecase.NewTodoUsecase(todoRepo, redisRepo, ctxTimeout)
-	authUC := usecase.NewAuthUsecase(userRepo, cryptoSvc, jwtSvc, ctxTimeout)
-	userUC := usecase.SignUpUsecase(userRepo, cryptoSvc, ctxTimeout)
+	signUpUC := usecase.SignUpUsecase(userRepo, cryptoSvc, ctxTimeout)
+	signInUC := usecase.SignInUsecase(userRepo, cryptoSvc, jwtSvc, ctxTimeout)
 
 	// Setup app middleware
 	appMiddleware := appMiddleware.NewMiddleware(jwtSvc)
@@ -72,8 +69,7 @@ func main() {
 		return c.String(http.StatusOK, "i am alive")
 	})
 
-	httpDelivery.NewTodoHandler(e, appMiddleware, todoUC)
-	httpDelivery.NewAuthHandler(e, appMiddleware, authUC, userUC)
+	httpDelivery.NewAuthHandler(e, appMiddleware, signUpUC, signInUC)
 
 	// Start server
 	go func() {

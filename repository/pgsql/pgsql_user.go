@@ -23,6 +23,12 @@ func (r *pgsqlUserRepository) Create(ctx context.Context, user *domain.User) (er
 	return
 }
 
+func (r *pgsqlUserRepository) UpdateTokenVersionByID(ctx context.Context, tokenVersion string, id string) (err error) {
+	query := "UPDATE users SET token_version = $1 WHERE id = $2"
+	_, err = r.db.ExecContext(ctx, query, id)
+	return
+}
+
 func (r *pgsqlUserRepository) GetByEmail(ctx context.Context, email string) (user domain.User, err error) {
 	query := "SELECT id, email, password, is_active, deleted_at FROM users WHERE email = $1"
 	err = r.db.QueryRowContext(ctx, query, email).Scan(&user.ID, &user.Email, &user.Password, &user.IsActive, &user.DeletedAt)

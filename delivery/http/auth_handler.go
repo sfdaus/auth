@@ -13,15 +13,15 @@ import (
 )
 
 type AuthHandler struct {
-	AuthUC   domain.AuthUsecase
 	SignUpUC domain.SignUpUsecase
+	SignInUC domain.SignInUsecase
 }
 
 // NewAuthHandler will initialize the auth resources endpoint
-func NewAuthHandler(e *echo.Echo, middleware *middleware.Middleware, authUC domain.AuthUsecase, signUpUC domain.SignUpUsecase) {
+func NewAuthHandler(e *echo.Echo, middleware *middleware.Middleware, signUpUC domain.SignUpUsecase, signInUC domain.SignInUsecase) {
 	handler := &AuthHandler{
-		AuthUC:   authUC,
 		SignUpUC: signUpUC,
+		SignInUC: signInUC,
 	}
 
 	apiV1 := e.Group("/api/v1")
@@ -82,7 +82,7 @@ func (h *AuthHandler) SignIn(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, utils.NewInvalidInputError(errVal))
 	}
 
-	accessToken, err := h.AuthUC.SignIn(ctx, &req)
+	accessToken, err := h.SignInUC.SignIn(ctx, &req)
 
 	if err != nil {
 		return c.JSON(utils.ParseHttpError(err))

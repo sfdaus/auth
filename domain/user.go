@@ -26,9 +26,14 @@ type SignUpUsecase interface {
 	SignUp(ctx context.Context, request *request.SignUpReq) error
 }
 
+type SignInUsecase interface {
+	SignIn(ctx context.Context, request *request.SignInReq) (accessToken string, err error)
+}
+
 // UserRepository represent the users repository contract
 type UserRepository interface {
 	Create(ctx context.Context, user *User) error
+	UpdateTokenVersionByID(ctx context.Context, tokenVersion string, id string) error
 	GetByEmail(ctx context.Context, email string) (User, error)
 	GetByUsername(ctx context.Context, username string) (User, error)
 	GetByPhoneNumber(ctx context.Context, phoneNumber string) (User, error)
