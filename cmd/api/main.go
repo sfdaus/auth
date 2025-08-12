@@ -7,22 +7,22 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/syahidfrd/go-boilerplate/utils/crypto"
-	"github.com/syahidfrd/go-boilerplate/utils/jwt"
+	"prakarsa-app/utils/crypto"
+	"prakarsa-app/utils/jwt"
 
-	_ "github.com/syahidfrd/go-boilerplate/docs"
-	"github.com/syahidfrd/go-boilerplate/utils"
+	_ "prakarsa-app/docs"
+	"prakarsa-app/utils"
+
+	"prakarsa-app/config"
+	httpDelivery "prakarsa-app/delivery/http"
+	appMiddleware "prakarsa-app/delivery/middleware"
+	"prakarsa-app/infrastructure/datastore"
+	pgsqlRepository "prakarsa-app/repository/pgsql"
+	"prakarsa-app/usecase"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	echoSwagger "github.com/swaggo/echo-swagger"
-	"github.com/syahidfrd/go-boilerplate/config"
-	httpDelivery "github.com/syahidfrd/go-boilerplate/delivery/http"
-	appMiddleware "github.com/syahidfrd/go-boilerplate/delivery/middleware"
-	"github.com/syahidfrd/go-boilerplate/infrastructure/datastore"
-	pgsqlRepository "github.com/syahidfrd/go-boilerplate/repository/pgsql"
-	redisRepository "github.com/syahidfrd/go-boilerplate/repository/redis"
-	"github.com/syahidfrd/go-boilerplate/usecase"
 )
 
 // @title Go Boilerplate
@@ -39,12 +39,11 @@ func main() {
 	dbInstance, err := datastore.NewDatabase(configApp.DatabaseURL)
 	utils.PanicIfNeeded(err)
 
-	cacheInstance, err := datastore.NewCache(configApp.CacheURL)
+	// cacheInstance, err := datastore.NewCache(configApp.CacheURL)
 	utils.PanicIfNeeded(err)
 
 	// Setup repository
-	redisRepo := redisRepository.NewRedisRepository(cacheInstance)
-	todoRepo := pgsqlRepository.NewPgsqlTodoRepository(dbInstance)
+	// redisRepo := redisRepository.NewRedisRepository(cacheInstance)
 	userRepo := pgsqlRepository.NewPgsqlUserRepository(dbInstance)
 
 	// Setup Service
@@ -53,8 +52,8 @@ func main() {
 
 	// Setup usecase
 	ctxTimeout := time.Duration(configApp.ContextTimeout) * time.Second
-	todoUC := usecase.NewTodoUsecase(todoRepo, redisRepo, ctxTimeout)
-	authUC := usecase.NewAuthUsecase(userRepo, cryptoSvc, jwtSvc, ctxTimeout)
+	signUpUC := usecase.SignUpUsecase(userRepo, cryptoSvc, ctxTimeout)
+	signInUC := usecase.SignInUsecase(userRepo, cryptoSvc, jwtSvc, ctxTimeout)
 
 	// Setup app middleware
 	appMiddleware := appMiddleware.NewMiddleware(jwtSvc)
@@ -70,8 +69,7 @@ func main() {
 		return c.String(http.StatusOK, "i am alive")
 	})
 
-	httpDelivery.NewTodoHandler(e, appMiddleware, todoUC)
-	httpDelivery.NewAuthHandler(e, appMiddleware, authUC)
+	httpDelivery.NewAuthHandler(e, appMiddleware, signUpUC, signInUC)
 
 	// Start server
 	go func() {

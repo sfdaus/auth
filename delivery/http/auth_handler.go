@@ -3,22 +3,25 @@ package http
 import (
 	"net/http"
 
+	"prakarsa-app/delivery/middleware"
+	"prakarsa-app/domain"
+	"prakarsa-app/transport/request"
+	"prakarsa-app/utils"
+
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/labstack/echo/v4"
-	"github.com/syahidfrd/go-boilerplate/delivery/middleware"
-	"github.com/syahidfrd/go-boilerplate/domain"
-	"github.com/syahidfrd/go-boilerplate/transport/request"
-	"github.com/syahidfrd/go-boilerplate/utils"
 )
 
 type AuthHandler struct {
-	AuthUC domain.AuthUsecase
+	SignUpUC domain.SignUpUsecase
+	SignInUC domain.SignInUsecase
 }
 
 // NewAuthHandler will initialize the auth resources endpoint
-func NewAuthHandler(e *echo.Echo, middleware *middleware.Middleware, authUC domain.AuthUsecase) {
+func NewAuthHandler(e *echo.Echo, middleware *middleware.Middleware, signUpUC domain.SignUpUsecase, signInUC domain.SignInUsecase) {
 	handler := &AuthHandler{
-		AuthUC: authUC,
+		SignUpUC: signUpUC,
+		SignInUC: signInUC,
 	}
 
 	apiV1 := e.Group("/api/v1")
@@ -48,7 +51,7 @@ func (h *AuthHandler) SignUp(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, utils.NewInvalidInputError(errVal))
 	}
 
-	if err := h.AuthUC.SignUp(ctx, &req); err != nil {
+	if err := h.SignUpUC.SignUp(ctx, &req); err != nil {
 		return c.JSON(utils.ParseHttpError(err))
 	}
 
@@ -79,7 +82,7 @@ func (h *AuthHandler) SignIn(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, utils.NewInvalidInputError(errVal))
 	}
 
-	accessToken, err := h.AuthUC.SignIn(ctx, &req)
+	accessToken, err := h.SignInUC.SignIn(ctx, &req)
 
 	if err != nil {
 		return c.JSON(utils.ParseHttpError(err))

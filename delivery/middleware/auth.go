@@ -4,9 +4,10 @@ import (
 	"net/http"
 	"strings"
 
+	"prakarsa-app/utils"
+
 	jwtLib "github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
-	"github.com/syahidfrd/go-boilerplate/utils"
 )
 
 func (m *Middleware) JWTAuth() echo.MiddlewareFunc {

@@ -31,6 +31,9 @@ var (
 	ErrNoCookie              = errors.New("not found cookie header")
 	ErrUnprocessableEntity   = errors.New("unprocessable entity")
 	ErrAuthenticationFailed  = errors.New("authentication vailed")
+
+	// SignUp specific errors
+	ErrSignUpMissingEmailOrPhone = errors.New("either email or phone number must be provided")
 )
 
 // HttpErr interface
