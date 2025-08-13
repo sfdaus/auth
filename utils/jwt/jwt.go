@@ -23,11 +23,11 @@ func NewJWTService(secretKey string) JWTService {
 func (s *jwtService) GenerateToken(ctx context.Context, userID string, tokenVersion string) (token string, err error) {
 	claims := &jwtCustomClaims{
 		userID,
+		tokenVersion,
 		jwt.StandardClaims{
-			TokenVersion: tokenVersion,
-			ExpiresAt:    time.Now().Add(time.Hour * 72).Unix(),
-			Issuer:       s.issuer,
-			IssuedAt:     time.Now().Unix(),
+			ExpiresAt: time.Now().Add(time.Hour * 72).Unix(),
+			Issuer:    s.issuer,
+			IssuedAt:  time.Now().Unix(),
 		},
 	}
 
