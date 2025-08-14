@@ -68,7 +68,6 @@ func (h *AuthHandler) SignUp(c echo.Context) error {
 	return c.JSON(http.StatusOK, response.BasicResponse{
 		Status:  constant.Status.Success,
 		Message: constant.SignupMessage.SignupSuccess,
-		Data:    nil,
 	})
 }
 
@@ -108,11 +107,13 @@ func (h *AuthHandler) SignIn(c echo.Context) error {
 		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.SigninMessage.SignininFailed))
 	}
 
-	return c.JSON(http.StatusOK, response.BasicResponse{
-		Status:  constant.Status.Success,
-		Message: constant.SigninMessage.SigninSuccess,
-		Data: map[string]interface{}{
-			"access_token": accessToken,
+	return c.JSON(http.StatusOK, response.SignInResponse{
+		BasicResponse: response.BasicResponse{
+			Status:  constant.Status.Success,
+			Message: constant.SigninMessage.SigninSuccess,
+		},
+		Data: response.SignInResponseData{
+			AccessToken: accessToken,
 		},
 	})
 }
