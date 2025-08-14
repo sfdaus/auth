@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"time"
 
+	"prakarsa-app/config/constant"
 	"prakarsa-app/domain"
 	"prakarsa-app/transport/request"
 	"prakarsa-app/utils"
@@ -35,7 +36,7 @@ func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (e
 	}
 
 	if user.ID != "" {
-		err = utils.NewBadRequestError("email already registered")
+		err = utils.NewBadRequestError(constant.SignupMessage.SignupExists)
 		return
 	}
 
