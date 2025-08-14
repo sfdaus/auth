@@ -43,28 +43,28 @@ func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (a
 		return
 	}
 
-	// passwordHash, err := u.cryptoSvc.CreatePasswordHash(ctx, request.Password)
-	// if err != nil {
-	// 	return
-	// }
+	passwordHash, err := u.cryptoSvc.CreatePasswordHash(ctx, request.Password)
+	if err != nil {
+		return
+	}
 
 	tokenVersion := utils.GenerateTokenVersion()
 	newUserID := utils.GenerateUUID()
 
-	// err = u.userRepo.Create(ctx, &domain.User{
-	// 	ID:           newUserID,
-	// 	Email:        request.Email,
-	// 	PhoneNumber:  request.PhoneNumber,
-	// 	Username:     request.Username,
-	// 	TokenVersion: tokenVersion,
-	// 	IsActive:     true,
-	// 	Password:     passwordHash,
-	// 	CreatedAt:    time.Now().Unix(),
-	// 	CreatedBy:    "",
-	// 	UpdatedAt:    0,
-	// 	UpdatedBy:    "",
-	// 	DeletedAt:    0,
-	// })
+	err = u.userRepo.Create(ctx, &domain.User{
+		ID:           newUserID,
+		Email:        request.Email,
+		PhoneNumber:  request.PhoneNumber,
+		Username:     request.Username,
+		TokenVersion: tokenVersion,
+		IsActive:     true,
+		Password:     passwordHash,
+		CreatedAt:    time.Now().Unix(),
+		CreatedBy:    "",
+		UpdatedAt:    0,
+		UpdatedBy:    "",
+		DeletedAt:    0,
+	})
 
 	accessToken, err = u.jwtSvc.GenerateToken(ctx, newUserID, tokenVersion)
 	return
