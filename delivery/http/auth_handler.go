@@ -3,9 +3,11 @@ package http
 import (
 	"net/http"
 
+	"prakarsa-app/config/constant"
 	"prakarsa-app/delivery/middleware"
 	"prakarsa-app/domain"
 	"prakarsa-app/transport/request"
+	"prakarsa-app/transport/response"
 	"prakarsa-app/utils"
 
 	validation "github.com/go-ozzo/ozzo-validation"
@@ -43,20 +45,35 @@ func (h *AuthHandler) SignUp(c echo.Context) error {
 	var req request.SignUpReq
 
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, utils.NewUnprocessableEntityError(err.Error()))
+		return c.JSON(http.StatusUnprocessableEntity, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.SignupMessage.SignupFailed,
+			Error:   err.Error(),
+		})
 	}
 
 	if err := req.Validate(); err != nil {
 		errVal := err.(validation.Errors)
-		return c.JSON(http.StatusBadRequest, utils.NewInvalidInputError(errVal))
+		return c.JSON(http.StatusBadRequest, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.SignupMessage.SignupFailed,
+			Error:   errVal,
+		})
 	}
 
-	if err := h.SignUpUC.SignUp(ctx, &req); err != nil {
-		return c.JSON(utils.ParseHttpError(err))
+	accessToken, err := h.SignUpUC.SignUp(ctx, &req)
+	if err != nil {
+		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.SignupMessage.SignupFailed))
 	}
 
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"message": "signup successfully",
+	return c.JSON(http.StatusOK, response.SignUpResponse{
+		BasicResponse: response.BasicResponse{
+			Status:  constant.Status.Success,
+			Message: constant.SignupMessage.SignupSuccess,
+		},
+		Data: response.SignUpResponseData{
+			AccessToken: accessToken,
+		},
 	})
 }
 
@@ -74,23 +91,35 @@ func (h *AuthHandler) SignIn(c echo.Context) error {
 	var req request.SignInReq
 
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, utils.NewUnprocessableEntityError(err.Error()))
+		return c.JSON(http.StatusUnprocessableEntity, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.SigninMessage.SignininFailed,
+			Error:   err.Error(),
+		})
 	}
 
 	if err := req.Validate(); err != nil {
 		errVal := err.(validation.Errors)
-		return c.JSON(http.StatusBadRequest, utils.NewInvalidInputError(errVal))
+		return c.JSON(http.StatusBadRequest, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.SigninMessage.SignininFailed,
+			Error:   errVal,
+		})
 	}
 
 	accessToken, err := h.SignInUC.SignIn(ctx, &req)
 
 	if err != nil {
-		return c.JSON(utils.ParseHttpError(err))
+		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.SigninMessage.SignininFailed))
 	}
 
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"data": map[string]interface{}{
-			"access_token": accessToken,
+	return c.JSON(http.StatusOK, response.SignInResponse{
+		BasicResponse: response.BasicResponse{
+			Status:  constant.Status.Success,
+			Message: constant.SigninMessage.SigninSuccess,
+		},
+		Data: response.SignInResponseData{
+			AccessToken: accessToken,
 		},
 	})
 }

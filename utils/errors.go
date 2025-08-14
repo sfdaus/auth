@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"prakarsa-app/config/constant"
+	"prakarsa-app/transport/response"
 	"sort"
 
 	validation "github.com/go-ozzo/ozzo-validation"
@@ -173,6 +175,27 @@ func ParseHttpError(err error) (int, interface{}) {
 		return httpErr.Status(), httpErr
 	}
 	return http.StatusInternalServerError, NewInternalServerError(err)
+}
+
+type ErrorInfo struct {
+	Message string `json:"message"`
+	Details string `json:"details,omitempty"`
+}
+
+// Parse Http Error into basic response
+func ParseHttpErrorToBasicResponse(err error, message string) (int, interface{}) {
+	if httpErr, ok := err.(HttpErr); ok {
+		return httpErr.Status(), response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: message,
+			Error:   httpErr.Details(),
+		}
+	}
+	return http.StatusInternalServerError, response.BasicResponse{
+		Status:  constant.Status.Error,
+		Message: message,
+		Error:   err.Error(),
+	}
 }
 
 // PanicIfNeeded is panic if needed

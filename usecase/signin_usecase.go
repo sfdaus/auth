@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"time"
 
+	"prakarsa-app/config/constant"
 	"prakarsa-app/domain"
 	"prakarsa-app/transport/request"
 	"prakarsa-app/utils"
@@ -35,21 +36,25 @@ func (u *signinUsecase) SignIn(c context.Context, request *request.SignInReq) (a
 	user, err := u.userRepo.GetByEmail(ctx, request.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			err = utils.NewBadRequestError("user not found")
+			err = utils.NewBadRequestError(constant.SigninMessage.SigninUserNotFound)
 			return
 		}
 		return
 	}
 
 	if !u.cryptoSvc.ValidatePassword(ctx, user.Password, request.Password) {
-		err = utils.NewBadRequestError("email and password not match")
+		err = utils.NewBadRequestError(constant.SigninMessage.SigninEmailPasswordNotMatch)
 		return
 	}
 
 	tokenVersion := utils.GenerateTokenVersion()
 	err = u.userRepo.UpdateTokenVersionByID(ctx, tokenVersion, user.ID)
 	if err != nil {
-		err = utils.NewBadRequestError("failed to update token version")
+		errorInfo := utils.ErrorInfo{
+			Message: constant.SigninMessage.SigninUpdateTokenVersionFailed,
+			Details: err.Error(),
+		}
+		err = utils.NewBadRequestError(errorInfo)
 		return
 	}
 

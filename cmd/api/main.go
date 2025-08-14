@@ -52,7 +52,7 @@ func main() {
 
 	// Setup usecase
 	ctxTimeout := time.Duration(configApp.ContextTimeout) * time.Second
-	signUpUC := usecase.SignUpUsecase(userRepo, cryptoSvc, ctxTimeout)
+	signUpUC := usecase.SignUpUsecase(userRepo, cryptoSvc, jwtSvc, ctxTimeout)
 	signInUC := usecase.SignInUsecase(userRepo, cryptoSvc, jwtSvc, ctxTimeout)
 
 	// Setup app middleware
@@ -61,7 +61,8 @@ func main() {
 	// Setup route engine & middleware
 	e := echo.New()
 	e.Use(middleware.CORS())
-	e.Use(appMiddleware.Logger(nil))
+	// e.Use(appMiddleware.Logger(nil))
+	e.Use(appMiddleware.CustomLogger())
 
 	// Setup handler
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
