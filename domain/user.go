@@ -23,7 +23,7 @@ type User struct {
 }
 
 type SignUpUsecase interface {
-	SignUp(ctx context.Context, request *request.SignUpReq) error
+	SignUp(ctx context.Context, request *request.SignUpReq) (accessToken string, err error)
 }
 
 type SignInUsecase interface {

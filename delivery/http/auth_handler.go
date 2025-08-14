@@ -61,13 +61,19 @@ func (h *AuthHandler) SignUp(c echo.Context) error {
 		})
 	}
 
-	if err := h.SignUpUC.SignUp(ctx, &req); err != nil {
+	accessToken, err := h.SignUpUC.SignUp(ctx, &req)
+	if err != nil {
 		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.SignupMessage.SignupFailed))
 	}
 
-	return c.JSON(http.StatusOK, response.BasicResponse{
-		Status:  constant.Status.Success,
-		Message: constant.SignupMessage.SignupSuccess,
+	return c.JSON(http.StatusOK, response.SignUpResponse{
+		BasicResponse: response.BasicResponse{
+			Status:  constant.Status.Success,
+			Message: constant.SignupMessage.SignupSuccess,
+		},
+		Data: response.SignUpResponseData{
+			AccessToken: accessToken,
+		},
 	})
 }
 
