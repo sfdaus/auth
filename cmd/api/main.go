@@ -25,7 +25,7 @@ import (
 	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
-// @title Go Boilerplate
+// @title Auth API
 // @version 1.0.4
 // @termsOfService http://swagger.io/terms/
 // @securityDefinitions.apikey JwtToken
@@ -45,6 +45,8 @@ func main() {
 	// Setup repository
 	// redisRepo := redisRepository.NewRedisRepository(cacheInstance)
 	userRepo := pgsqlRepository.NewPgsqlUserRepository(dbInstance)
+	authTokenRepo := pgsqlRepository.NewPgsqlAuthTokenRepository(dbInstance)
+	profioleRepo := pgsqlRepository.NewPgsqlProfileRepository(dbInstance)
 
 	// Setup Service
 	cryptoSvc := crypto.NewCryptoService()
@@ -52,7 +54,7 @@ func main() {
 
 	// Setup usecase
 	ctxTimeout := time.Duration(configApp.ContextTimeout) * time.Second
-	signUpUC := usecase.SignUpUsecase(userRepo, cryptoSvc, jwtSvc, ctxTimeout)
+	signUpUC := usecase.SignUpUsecase(userRepo, authTokenRepo, profioleRepo, cryptoSvc, jwtSvc, ctxTimeout)
 	signInUC := usecase.SignInUsecase(userRepo, cryptoSvc, jwtSvc, ctxTimeout)
 
 	// Setup app middleware

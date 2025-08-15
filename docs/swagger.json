@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "title": "Go Boilerplate",
+        "title": "Auth API",
         "termsOfService": "http://swagger.io/terms/",
         "contact": {},
         "version": "1.0.4"
@@ -94,13 +94,10 @@
                 "email": {
                     "type": "string"
                 },
+                "name": {
+                    "type": "string"
+                },
                 "password": {
-                    "type": "string"
-                },
-                "phone_number": {
-                    "type": "string"
-                },
-                "username": {
                     "type": "string"
                 }
             }

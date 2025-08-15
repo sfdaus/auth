@@ -14,17 +14,15 @@ definitions:
     properties:
       email:
         type: string
+      name:
+        type: string
       password:
-        type: string
-      phone_number:
-        type: string
-      username:
         type: string
     type: object
 info:
   contact: {}
   termsOfService: http://swagger.io/terms/
-  title: Go Boilerplate
+  title: Auth API
   version: 1.0.4
 paths:
   /api/v1/auth/signin:
