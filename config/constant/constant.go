@@ -47,3 +47,13 @@ var SignupMessage = SignupResponseMessage{
 	SignupFailedToCreateAuthToken: "Failed to create auth token",
 	SignupFailedToGenerateToken:   "Failed to generate access token",
 }
+
+type CompleteProfileResponseMessage struct {
+	CompleteProfileSuccess string
+	CompleteProfileFailed  string
+}
+
+var CompleteProfileMessage = CompleteProfileResponseMessage{
+	CompleteProfileSuccess: "Complete profile successful",
+	CompleteProfileFailed:  "Complete profile failed",
+}

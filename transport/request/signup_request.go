@@ -14,17 +14,21 @@ type SignUpReq struct {
 }
 
 func (request SignUpReq) Validate() error {
-	return validation.ValidateStruct(
+	return validation.ValidateStruct(&request,
 		validation.Field(
 			&request.Email,
-			validation.By(func(value interface{}) error {
-				if request.Email == "" {
-					return utils.ErrSignUpMissingEmailOrPhone
-				}
-				return nil
-			}),
-			is.Email,
+			validation.Required.Error(utils.ErrSignUpMissingEmailOrPhone.Error()),
+			is.Email.Error("invalid email format"),
 		),
-		validation.Field(&request.Password, validation.Required, validation.Length(8, 20)),
+		validation.Field(
+			&request.Name,
+			validation.Required.Error("name is required"),
+			validation.Length(3, 50).Error("name must be between 3-50 characters"),
+		),
+		validation.Field(
+			&request.Password,
+			validation.Required.Error("password is required"),
+			validation.Length(8, 20).Error("password must be between 8-20 characters"),
+		),
 	)
 }

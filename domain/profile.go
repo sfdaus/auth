@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"prakarsa-app/transport/request"
 	"time"
 )
 
@@ -36,4 +37,8 @@ type ProfileRepository interface {
 	Create(ctx context.Context, profile *Profile) error
 	GetByUserID(ctx context.Context, userID string) (Profile, error)
 	CompleteProfile(ctx context.Context, userID string, completeProfile *CompleteProfile) error
+}
+
+type ProfileUsecase interface {
+	CompleteProfile(ctx context.Context, userID string, request *request.CompleteProfileReq) error
 }

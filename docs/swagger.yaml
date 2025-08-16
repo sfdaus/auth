@@ -1,4 +1,13 @@
 definitions:
+  request.CompleteProfileReq:
+    properties:
+      birth_date:
+        type: string
+      gender:
+        type: string
+      institution_id:
+        type: string
+    type: object
   request.SignInReq:
     properties:
       email:
@@ -25,6 +34,31 @@ info:
   title: Auth API
   version: 1.0.4
 paths:
+  /api/v1/auth/complete-profile:
+    post:
+      consumes:
+      - application/json
+      description: CompleteProfile
+      parameters:
+      - description: User ID from Gateway
+        in: header
+        name: X-User-Id
+        required: true
+        type: string
+      - description: CompleteProfile user
+        in: body
+        name: completeprofile
+        required: true
+        schema:
+          $ref: '#/definitions/request.CompleteProfileReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: CompleteProfile
+      tags:
+      - Auth
   /api/v1/auth/signin:
     post:
       consumes:

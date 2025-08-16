@@ -7,6 +7,44 @@
         "version": "1.0.4"
     },
     "paths": {
+        "/api/v1/auth/complete-profile": {
+            "post": {
+                "description": "CompleteProfile",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "CompleteProfile",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID from Gateway",
+                        "name": "X-User-Id",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "CompleteProfile user",
+                        "name": "completeprofile",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CompleteProfileReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/api/v1/auth/signin": {
             "post": {
                 "description": "SignIn",
@@ -71,6 +109,20 @@
         }
     },
     "definitions": {
+        "request.CompleteProfileReq": {
+            "type": "object",
+            "properties": {
+                "birth_date": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "institution_id": {
+                    "type": "string"
+                }
+            }
+        },
         "request.SignInReq": {
             "type": "object",
             "properties": {

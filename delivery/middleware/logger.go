@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -164,6 +165,12 @@ func (w *bodyDumpResponseWriter) Write(b []byte) (int, error) {
 func (m *Middleware) CustomLogger() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			// Skip logging untuk swagger, favicon, atau healthcheck
+			path := c.Request().URL.Path
+			if strings.HasPrefix(path, "/swagger") || path == "/favicon.ico" || path == "/health" {
+				return next(c)
+			}
+
 			start := time.Now()
 
 			// Generate request_id if not provided

@@ -46,7 +46,7 @@ func main() {
 	// redisRepo := redisRepository.NewRedisRepository(cacheInstance)
 	userRepo := pgsqlRepository.NewPgsqlUserRepository(dbInstance)
 	authTokenRepo := pgsqlRepository.NewPgsqlAuthTokenRepository(dbInstance)
-	profioleRepo := pgsqlRepository.NewPgsqlProfileRepository(dbInstance)
+	profileRepo := pgsqlRepository.NewPgsqlProfileRepository(dbInstance)
 
 	// Setup Service
 	cryptoSvc := crypto.NewCryptoService()
@@ -54,8 +54,9 @@ func main() {
 
 	// Setup usecase
 	ctxTimeout := time.Duration(configApp.ContextTimeout) * time.Second
-	signUpUC := usecase.SignUpUsecase(userRepo, authTokenRepo, profioleRepo, cryptoSvc, jwtSvc, ctxTimeout)
+	signUpUC := usecase.SignUpUsecase(userRepo, authTokenRepo, profileRepo, cryptoSvc, jwtSvc, ctxTimeout)
 	signInUC := usecase.SignInUsecase(userRepo, cryptoSvc, jwtSvc, ctxTimeout)
+	profileUC := usecase.ProfileUsecase(profileRepo, ctxTimeout)
 
 	// Setup app middleware
 	appMiddleware := appMiddleware.NewMiddleware(jwtSvc)
@@ -72,7 +73,7 @@ func main() {
 		return c.String(http.StatusOK, "i am alive")
 	})
 
-	httpDelivery.NewAuthHandler(e, appMiddleware, signUpUC, signInUC)
+	httpDelivery.NewAuthHandler(e, appMiddleware, signUpUC, signInUC, profileUC)
 
 	// Start server
 	go func() {
