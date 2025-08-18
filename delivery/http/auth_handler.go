@@ -15,20 +15,23 @@ import (
 )
 
 type AuthHandler struct {
-	SignUpUC domain.SignUpUsecase
-	SignInUC domain.SignInUsecase
+	SignUpUC  domain.SignUpUsecase
+	SignInUC  domain.SignInUsecase
+	ProfileUC domain.ProfileUsecase
 }
 
 // NewAuthHandler will initialize the auth resources endpoint
-func NewAuthHandler(e *echo.Echo, middleware *middleware.Middleware, signUpUC domain.SignUpUsecase, signInUC domain.SignInUsecase) {
+func NewAuthHandler(e *echo.Echo, middleware *middleware.Middleware, signUpUC domain.SignUpUsecase, signInUC domain.SignInUsecase, profileUC domain.ProfileUsecase) {
 	handler := &AuthHandler{
-		SignUpUC: signUpUC,
-		SignInUC: signInUC,
+		SignUpUC:  signUpUC,
+		SignInUC:  signInUC,
+		ProfileUC: profileUC,
 	}
 
 	apiV1 := e.Group("/api/v1")
 	apiV1.POST("/auth/signup", handler.SignUp)
 	apiV1.POST("/auth/signin", handler.SignIn)
+	apiV1.POST("/auth/complete-profile", handler.CompleteProfile)
 }
 
 // SignUp godoc
@@ -121,5 +124,53 @@ func (h *AuthHandler) SignIn(c echo.Context) error {
 		Data: response.SignInResponseData{
 			AccessToken: accessToken,
 		},
+	})
+}
+
+// CompleteProfile godoc
+// @Summary CompleteProfile
+// @Description CompleteProfile
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param x-user-id header string true "User ID from Gateway"
+// @Param completeprofile body request.CompleteProfileReq true "CompleteProfile user"
+// @Success 200
+// @Router /api/v1/auth/complete-profile [post]
+func (h *AuthHandler) CompleteProfile(c echo.Context) error {
+	ctx := c.Request().Context()
+	var req request.CompleteProfileReq
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.CompleteProfileMessage.CompleteProfileFailed,
+			Error:   err.Error(),
+		})
+	}
+
+	if err := req.Validate(); err != nil {
+		errVal := err.(validation.Errors)
+		return c.JSON(http.StatusBadRequest, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.CompleteProfileMessage.CompleteProfileFailed,
+			Error:   errVal,
+		})
+	}
+
+	userID := c.Request().Header.Get("x-user-id")
+	if userID == "" {
+		return c.JSON(http.StatusUnauthorized, map[string]string{
+			"error": "missing x-user-id header",
+		})
+	}
+	err := h.ProfileUC.CompleteProfile(ctx, userID, &req)
+	if err != nil {
+		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.CompleteProfileMessage.CompleteProfileFailed))
+	}
+
+	return c.JSON(http.StatusOK, response.BasicResponse{
+		Status:  constant.Status.Success,
+		Message: constant.CompleteProfileMessage.CompleteProfileSuccess,
 	})
 }
