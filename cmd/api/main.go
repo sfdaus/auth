@@ -25,7 +25,7 @@ import (
 	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
-// @title Go Boilerplate
+// @title Auth API
 // @version 1.0.4
 // @termsOfService http://swagger.io/terms/
 // @securityDefinitions.apikey JwtToken
@@ -45,6 +45,8 @@ func main() {
 	// Setup repository
 	// redisRepo := redisRepository.NewRedisRepository(cacheInstance)
 	userRepo := pgsqlRepository.NewPgsqlUserRepository(dbInstance)
+	authTokenRepo := pgsqlRepository.NewPgsqlAuthTokenRepository(dbInstance)
+	profileRepo := pgsqlRepository.NewPgsqlProfileRepository(dbInstance)
 
 	// Setup Service
 	cryptoSvc := crypto.NewCryptoService()
@@ -52,8 +54,9 @@ func main() {
 
 	// Setup usecase
 	ctxTimeout := time.Duration(configApp.ContextTimeout) * time.Second
-	signUpUC := usecase.SignUpUsecase(userRepo, cryptoSvc, jwtSvc, ctxTimeout)
+	signUpUC := usecase.SignUpUsecase(userRepo, authTokenRepo, profileRepo, cryptoSvc, jwtSvc, ctxTimeout)
 	signInUC := usecase.SignInUsecase(userRepo, cryptoSvc, jwtSvc, ctxTimeout)
+	profileUC := usecase.ProfileUsecase(profileRepo, ctxTimeout)
 
 	// Setup app middleware
 	appMiddleware := appMiddleware.NewMiddleware(jwtSvc)
@@ -70,7 +73,7 @@ func main() {
 		return c.String(http.StatusOK, "i am alive")
 	})
 
-	httpDelivery.NewAuthHandler(e, appMiddleware, signUpUC, signInUC)
+	httpDelivery.NewAuthHandler(e, appMiddleware, signUpUC, signInUC, profileUC)
 
 	// Start server
 	go func() {
