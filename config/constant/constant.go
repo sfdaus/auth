@@ -29,13 +29,31 @@ var SigninMessage = SigninResponseMessage{
 }
 
 type SignupResponseMessage struct {
-	SignupSuccess string
-	SignupFailed  string
-	SignupExists  string
+	SignupSuccess                 string
+	SignupFailed                  string
+	SignupExists                  string
+	SignupFailedToCreateUser      string
+	SignupFailedToCreateProfile   string
+	SignupFailedToCreateAuthToken string
+	SignupFailedToGenerateToken   string
 }
 
 var SignupMessage = SignupResponseMessage{
-	SignupSuccess: "Sign up successful",
-	SignupFailed:  "Sign up failed",
-	SignupExists:  "Email/phone number/username already registered",
+	SignupSuccess:                 "Sign up successful",
+	SignupFailed:                  "Sign up failed",
+	SignupExists:                  "Email/phone number/username already registered",
+	SignupFailedToCreateUser:      "Failed to create user",
+	SignupFailedToCreateProfile:   "Failed to create profile",
+	SignupFailedToCreateAuthToken: "Failed to create auth token",
+	SignupFailedToGenerateToken:   "Failed to generate access token",
+}
+
+type CompleteProfileResponseMessage struct {
+	CompleteProfileSuccess string
+	CompleteProfileFailed  string
+}
+
+var CompleteProfileMessage = CompleteProfileResponseMessage{
+	CompleteProfileSuccess: "Complete profile successful",
+	CompleteProfileFailed:  "Complete profile failed",
 }

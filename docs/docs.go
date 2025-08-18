@@ -16,6 +16,44 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/v1/auth/complete-profile": {
+            "post": {
+                "description": "CompleteProfile",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "CompleteProfile",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID from Gateway",
+                        "name": "X-User-Id",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "CompleteProfile user",
+                        "name": "completeprofile",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CompleteProfileReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/api/v1/auth/signin": {
             "post": {
                 "description": "SignIn",
@@ -80,6 +118,20 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "request.CompleteProfileReq": {
+            "type": "object",
+            "properties": {
+                "birth_date": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "institution_id": {
+                    "type": "string"
+                }
+            }
+        },
         "request.SignInReq": {
             "type": "object",
             "properties": {
@@ -103,13 +155,10 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
+                "name": {
+                    "type": "string"
+                },
                 "password": {
-                    "type": "string"
-                },
-                "phone_number": {
-                    "type": "string"
-                },
-                "username": {
                     "type": "string"
                 }
             }
@@ -130,7 +179,7 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "",
 	BasePath:         "",
 	Schemes:          []string{},
-	Title:            "Auth",
+	Title:            "Auth API",
 	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,

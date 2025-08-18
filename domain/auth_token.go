@@ -18,6 +18,17 @@ type AuthToken struct {
 	DeletedAt    int64  `json:"deleted_at"`
 }
 
+type UpdateAuthToken struct {
+	UserAgent    string `json:"user_agent"`
+	RefreshToken string `json:"refresh_token"`
+	ExpiresAt    int64  `json:"expires_at"`
+	IssuedAt     int64  `json:"issued_at"`
+	UpdatedAt    int64  `json:"updated_at"`
+	UpdatedBy    string `json:"updated_by"`
+}
+
 type AuthTokenRepository interface {
 	Create(ctx context.Context, authToken *AuthToken) error
+	GetByUserID(ctx context.Context, userID string) (AuthToken, error)
+	UpdateRefreshToken(ctx context.Context, userID string, updateAuthToken UpdateAuthToken) error
 }
