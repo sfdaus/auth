@@ -1,11 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: auth-api
+  name: auth
   namespace: prakarsa
+  labels:
+    app: auth
 spec:
   type: ClusterIP
-  selector: { app: auth-api }
+  selector:
+    app: auth
   ports:
     - name: http
       port: 80
