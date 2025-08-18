@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: comment
+  name: auth
   namespace: prakarsa
   annotations:
     kubernetes.io/ingress.class: traefik
@@ -14,6 +14,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: comment
+                name: auth
                 port:
                   number: 80
