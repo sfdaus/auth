@@ -32,6 +32,7 @@ func NewAuthHandler(e *echo.Echo, middleware *middleware.Middleware, signUpUC do
 	apiV1.POST("/auth/signup", handler.SignUp)
 	apiV1.POST("/auth/signin", handler.SignIn)
 	apiV1.POST("/auth/complete-profile", handler.CompleteProfile)
+	apiV1.GET("/auth/profile-completion", handler.ProfileCompletion)
 }
 
 // SignUp godoc
@@ -172,5 +173,39 @@ func (h *AuthHandler) CompleteProfile(c echo.Context) error {
 	return c.JSON(http.StatusOK, response.BasicResponse{
 		Status:  constant.Status.Success,
 		Message: constant.CompleteProfileMessage.CompleteProfileSuccess,
+	})
+}
+
+// ProfileCompletion godoc
+// @Summary ProfileCompletion
+// @Description ProfileCompletion
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param x-user-id header string true "User ID from Gateway"
+// @Success 200
+// @Router /api/v1/auth/profile-completion [get]
+func (h *AuthHandler) ProfileCompletion(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	userID := c.Request().Header.Get("x-user-id")
+	if userID == "" {
+		return c.JSON(http.StatusUnauthorized, map[string]string{
+			"error": "missing x-user-id header",
+		})
+	}
+	profileCompletion, err := h.ProfileUC.ProfileCompletion(ctx, userID)
+	if err != nil {
+		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.CompleteProfileMessage.CompleteProfileFailed))
+	}
+
+	return c.JSON(http.StatusOK, response.ProfileCompletionResponse{
+		BasicResponse: response.BasicResponse{
+			Status:  constant.Status.Success,
+			Message: constant.SigninMessage.SigninSuccess,
+		},
+		Data: response.ProfileCompletionResponseData{
+			CompletionStatus: profileCompletion,
+		},
 	})
 }

@@ -57,3 +57,15 @@ var CompleteProfileMessage = CompleteProfileResponseMessage{
 	CompleteProfileSuccess: "Complete profile successful",
 	CompleteProfileFailed:  "Complete profile failed",
 }
+
+type ProfileCompletionResponseMessage struct {
+	ProfileCompletionSuccess      string
+	ProfileCompletionFailed       string
+	ProfileCompletionUserNotFound string
+}
+
+var ProfileCompletionMessage = ProfileCompletionResponseMessage{
+	ProfileCompletionSuccess:      "Profile completion successful",
+	ProfileCompletionFailed:       "Profile completion failed",
+	ProfileCompletionUserNotFound: "User not found",
+}

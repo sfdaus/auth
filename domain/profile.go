@@ -41,4 +41,5 @@ type ProfileRepository interface {
 
 type ProfileUsecase interface {
 	CompleteProfile(ctx context.Context, userID string, request *request.CompleteProfileReq) error
+	ProfileCompletion(ctx context.Context, userID string) (bool, error)
 }

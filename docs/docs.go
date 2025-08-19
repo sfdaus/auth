@@ -33,7 +33,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "User ID from Gateway",
-                        "name": "X-User-Id",
+                        "name": "x-user-id",
                         "in": "header",
                         "required": true
                     },
@@ -45,6 +45,35 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/request.CompleteProfileReq"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/profile-completion": {
+            "get": {
+                "description": "ProfileCompletion",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "ProfileCompletion",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID from Gateway",
+                        "name": "x-user-id",
+                        "in": "header",
+                        "required": true
                     }
                 ],
                 "responses": {
