@@ -33,3 +33,20 @@ func (r *pgsqlProfileRepository) CompleteProfile(ctx context.Context, userID str
 	_, err = r.db.ExecContext(ctx, query, completeProfile.BirthDate, completeProfile.Gender, completeProfile.InstitutionID, completeProfile.UpdatedAt, completeProfile.UpdatedBy, userID)
 	return
 }
+
+func (r *pgsqlProfileRepository) GetUserProfileByUserID(ctx context.Context, userID string) (userProfile domain.UserProfile, err error) {
+	query := `
+		SELECT p.user_id, u.username, u.phone_number, u.email, p.name, p.name_alias, p.avatar, p.gender,
+		       p.birth_date, p.slug_name, p.about_me, p.institution_id, p.created_at AS joined_at
+		FROM profiles p
+		JOIN users u ON p.user_id = u.id
+		WHERE p.user_id = $1
+	`
+	err = r.db.QueryRowContext(ctx, query, userID).Scan(
+		&userProfile.UserID, &userProfile.Username, &userProfile.PhoneNumber, &userProfile.Email,
+		&userProfile.Name, &userProfile.NameAlias, &userProfile.Avatar, &userProfile.Gender,
+		&userProfile.BirthDate, &userProfile.SlugName, &userProfile.AboutMe, &userProfile.InstitutionID,
+		&userProfile.JoinedAt,
+	)
+	return
+}

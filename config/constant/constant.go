@@ -57,3 +57,39 @@ var CompleteProfileMessage = CompleteProfileResponseMessage{
 	CompleteProfileSuccess: "Complete profile successful",
 	CompleteProfileFailed:  "Complete profile failed",
 }
+
+type ProfileCompletionResponseMessage struct {
+	ProfileCompletionSuccess      string
+	ProfileCompletionFailed       string
+	ProfileCompletionUserNotFound string
+}
+
+var ProfileCompletionMessage = ProfileCompletionResponseMessage{
+	ProfileCompletionSuccess:      "Profile completion successful",
+	ProfileCompletionFailed:       "Profile completion failed",
+	ProfileCompletionUserNotFound: "User not found",
+}
+
+type AuthorizationResponseMessage struct {
+	AuthorizationSuccess        string
+	AuthorizationFailed         string
+	AuthorizationXUserIDMissing string
+}
+
+var AuthorizationMessage = AuthorizationResponseMessage{
+	AuthorizationSuccess:        "Authorization successful",
+	AuthorizationFailed:         "Authorization failed",
+	AuthorizationXUserIDMissing: "Missing x-user-id header",
+}
+
+type UserProfileResponseMessage struct {
+	UserProfileSuccess      string
+	UserProfileFailed       string
+	UserProfileUserNotFound string
+}
+
+var UserProfileMessage = UserProfileResponseMessage{
+	UserProfileSuccess:      "User profile retrieved successfully",
+	UserProfileFailed:       "Failed to retrieve user profile",
+	UserProfileUserNotFound: "User not found",
+}

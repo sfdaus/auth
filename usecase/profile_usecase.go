@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"database/sql"
+	"prakarsa-app/config/constant"
 	"prakarsa-app/domain"
 	"prakarsa-app/transport/request"
 	"prakarsa-app/utils"
@@ -26,7 +27,11 @@ func (u *profileUsecase) CompleteProfile(ctx context.Context, userID string, req
 	defer cancel()
 
 	profile, err := u.profileRepo.GetByUserID(ctx, userID)
-	if err != nil && err != sql.ErrNoRows {
+	if err != nil {
+		if err == sql.ErrNoRows {
+			err = utils.NewBadRequestError(constant.ProfileCompletionMessage.ProfileCompletionUserNotFound)
+			return
+		}
 		return
 	}
 
@@ -46,4 +51,44 @@ func (u *profileUsecase) CompleteProfile(ctx context.Context, userID string, req
 	}
 
 	return nil
+}
+
+func (u *profileUsecase) ProfileCompletion(ctx context.Context, userID string) (isComplete bool, err error) {
+	ctx, cancel := context.WithTimeout(ctx, u.contextTimeout)
+	defer cancel()
+
+	profile, err := u.profileRepo.GetByUserID(ctx, userID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			err = utils.NewBadRequestError(constant.ProfileCompletionMessage.ProfileCompletionUserNotFound)
+			return
+		}
+		return
+	}
+
+	isComplete = false
+
+	if profile.BirthDate.IsZero() || profile.Gender == "" || profile.InstitutionID == "" {
+		isComplete = false
+	} else {
+		isComplete = true
+	}
+
+	return isComplete, nil
+}
+
+func (u *profileUsecase) UserProfile(ctx context.Context, userID string) (domain.UserProfile, error) {
+	ctx, cancel := context.WithTimeout(ctx, u.contextTimeout)
+	defer cancel()
+
+	userProfile, err := u.profileRepo.GetUserProfileByUserID(ctx, userID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			err = utils.NewBadRequestError(constant.UserProfileMessage.UserProfileUserNotFound)
+			return domain.UserProfile{}, err
+		}
+		return domain.UserProfile{}, err
+	}
+
+	return userProfile, nil
 }

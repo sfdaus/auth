@@ -42,7 +42,7 @@ paths:
       parameters:
       - description: User ID from Gateway
         in: header
-        name: X-User-Id
+        name: x-user-id
         required: true
         type: string
       - description: CompleteProfile user
@@ -57,6 +57,25 @@ paths:
         "200":
           description: OK
       summary: CompleteProfile
+      tags:
+      - Auth
+  /api/v1/auth/profile-completion:
+    get:
+      consumes:
+      - application/json
+      description: ProfileCompletion
+      parameters:
+      - description: User ID from Gateway
+        in: header
+        name: x-user-id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: ProfileCompletion
       tags:
       - Auth
   /api/v1/auth/signin:
@@ -97,6 +116,25 @@ paths:
         "200":
           description: OK
       summary: SignUp
+      tags:
+      - Auth
+  /api/v1/auth/user-profile:
+    get:
+      consumes:
+      - application/json
+      description: UserProfile
+      parameters:
+      - description: User ID from Gateway
+        in: header
+        name: x-user-id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: UserProfile
       tags:
       - Auth
 securityDefinitions:
