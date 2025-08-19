@@ -76,3 +76,19 @@ func (u *profileUsecase) ProfileCompletion(ctx context.Context, userID string) (
 
 	return isComplete, nil
 }
+
+func (u *profileUsecase) UserProfile(ctx context.Context, userID string) (domain.UserProfile, error) {
+	ctx, cancel := context.WithTimeout(ctx, u.contextTimeout)
+	defer cancel()
+
+	userProfile, err := u.profileRepo.GetUserProfileByUserID(ctx, userID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			err = utils.NewBadRequestError(constant.UserProfileMessage.UserProfileUserNotFound)
+			return domain.UserProfile{}, err
+		}
+		return domain.UserProfile{}, err
+	}
+
+	return userProfile, nil
+}
