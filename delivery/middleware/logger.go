@@ -167,7 +167,7 @@ func (m *Middleware) CustomLogger() echo.MiddlewareFunc {
 		return func(c echo.Context) error {
 			// Skip logging untuk swagger, favicon, atau healthcheck
 			path := c.Request().URL.Path
-			if strings.HasPrefix(path, "/swagger") || path == "/favicon.ico" || path == "/health" {
+			if strings.HasPrefix(path, "/api/v1/auth/swagger") || path == "/favicon.ico" || path == "/health" {
 				return next(c)
 			}
 

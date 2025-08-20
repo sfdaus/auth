@@ -33,7 +33,7 @@ func SignUpUsecase(userRepo domain.UserRepository, authTokenRepo domain.AuthToke
 	}
 }
 
-func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (accessToken string, err error) {
+func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (accessToken string, userID string, err error) {
 	ctx, cancel := context.WithTimeout(c, u.contextTimeout)
 	defer cancel()
 
@@ -131,6 +131,7 @@ func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (a
 		return
 	}
 
+	userID = newUserID
 	// Generate JWT token for the new user
 	accessToken, err = u.jwtSvc.GenerateToken(ctx, newUserID, tokenVersion)
 	if err != nil {

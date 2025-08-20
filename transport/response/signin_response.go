@@ -6,5 +6,6 @@ type SignInResponse struct {
 }
 
 type SignInResponseData struct {
+	UserID      string `json:"user_id"`
 	AccessToken string `json:"access_token"`
 }

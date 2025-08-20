@@ -66,7 +66,7 @@ func (h *AuthHandler) SignUp(c echo.Context) error {
 		})
 	}
 
-	accessToken, err := h.SignUpUC.SignUp(ctx, &req)
+	accessToken, userID, err := h.SignUpUC.SignUp(ctx, &req)
 	if err != nil {
 		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.SignupMessage.SignupFailed))
 	}
@@ -77,6 +77,7 @@ func (h *AuthHandler) SignUp(c echo.Context) error {
 			Message: constant.SignupMessage.SignupSuccess,
 		},
 		Data: response.SignUpResponseData{
+			UserID:      userID,
 			AccessToken: accessToken,
 		},
 	})
@@ -112,7 +113,7 @@ func (h *AuthHandler) SignIn(c echo.Context) error {
 		})
 	}
 
-	accessToken, err := h.SignInUC.SignIn(ctx, &req)
+	accessToken, userID, err := h.SignInUC.SignIn(ctx, &req)
 
 	if err != nil {
 		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.SigninMessage.SignininFailed))
@@ -124,6 +125,7 @@ func (h *AuthHandler) SignIn(c echo.Context) error {
 			Message: constant.SigninMessage.SigninSuccess,
 		},
 		Data: response.SignInResponseData{
+			UserID:      userID,
 			AccessToken: accessToken,
 		},
 	})
