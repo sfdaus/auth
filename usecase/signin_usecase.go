@@ -29,7 +29,7 @@ func SignInUsecase(userRepo domain.UserRepository, cryptoSvc crypto.CryptoServic
 	}
 }
 
-func (u *signinUsecase) SignIn(c context.Context, request *request.SignInReq) (accessToken string, err error) {
+func (u *signinUsecase) SignIn(c context.Context, request *request.SignInReq) (accessToken string, userID string, err error) {
 	ctx, cancel := context.WithTimeout(c, u.contextTimeout)
 	defer cancel()
 
@@ -58,6 +58,7 @@ func (u *signinUsecase) SignIn(c context.Context, request *request.SignInReq) (a
 		return
 	}
 
+	userID = user.ID
 	accessToken, err = u.jwtSvc.GenerateToken(ctx, user.ID, tokenVersion)
 	return
 }

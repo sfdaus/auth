@@ -68,7 +68,7 @@ func main() {
 	e.Use(appMiddleware.CustomLogger())
 
 	// Setup handler
-	e.GET("/swagger/*", echoSwagger.WrapHandler)
+	e.GET("/api/v1/auth/swagger/*", echoSwagger.WrapHandler)
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "i am alive")
 	})

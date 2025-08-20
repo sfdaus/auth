@@ -23,11 +23,11 @@ type User struct {
 }
 
 type SignUpUsecase interface {
-	SignUp(ctx context.Context, request *request.SignUpReq) (accessToken string, err error)
+	SignUp(ctx context.Context, request *request.SignUpReq) (accessToken string, userID string, err error)
 }
 
 type SignInUsecase interface {
-	SignIn(ctx context.Context, request *request.SignInReq) (accessToken string, err error)
+	SignIn(ctx context.Context, request *request.SignInReq) (accessToken string, userID string, err error)
 }
 
 // UserRepository represent the users repository contract
