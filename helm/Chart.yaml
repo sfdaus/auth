@@ -1,5 +1,5 @@
 apiVersion: v2
-name: threads
+name: auth
 description: Helm chart for deploying Prakarsa Auth Service
 type: application
 version: 0.1.0
@@ -9,4 +9,4 @@ maintainers:
     email: prakarsaapp@gmail.com
 keywords:
   - prakarsa
-  - threads
+  - auth
