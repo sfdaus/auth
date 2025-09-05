@@ -145,6 +145,44 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/auth/update-profile": {
+            "put": {
+                "description": "UpdateProfile",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "UpdateProfile",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID from Gateway",
+                        "name": "x-user-id",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "UpdateProfile user",
+                        "name": "updateprofile",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UpdateProfileReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/api/v1/auth/user-profile": {
             "get": {
                 "description": "UserProfile",
@@ -217,6 +255,32 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.UpdateProfileReq": {
+            "type": "object",
+            "properties": {
+                "about_me": {
+                    "type": "string"
+                },
+                "avatar": {
+                    "type": "string"
+                },
+                "birth_date": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "institution_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "slug_name": {
                     "type": "string"
                 }
             }
