@@ -92,3 +92,44 @@ func (u *profileUsecase) UserProfile(ctx context.Context, userID string) (domain
 
 	return userProfile, nil
 }
+
+func (u *profileUsecase) UpdateProfile(ctx context.Context, userID string, request *request.UpdateProfileReq) (err error) {
+	ctx, cancel := context.WithTimeout(ctx, u.contextTimeout)
+	defer cancel()
+
+	profile, err := u.profileRepo.GetByUserID(ctx, userID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			err = utils.NewBadRequestError(constant.UserProfileMessage.UserProfileUserNotFound)
+			return
+		}
+		return
+	}
+
+	var birthDate time.Time
+	if request.BirthDate != "" {
+		birthDate, err = utils.ParseDateYYYYMMDD(request.BirthDate)
+		if err != nil {
+			return
+		}
+	}
+
+	nameAlias := ""
+	if request.Name != "" {
+		nameAlias = utils.GenerateNameAlias(request.Name)
+	}
+
+	err = u.profileRepo.UpdateProfile(ctx, userID, &domain.UpdateProfile{
+		Name:          request.Name,
+		NameAlias:     nameAlias,
+		BirthDate:     birthDate,
+		Gender:        request.Gender,
+		InstitutionID: request.InstitutionID,
+		UpdatedAt:     time.Now().Unix(),
+		UpdatedBy:     profile.UserID,
+	})
+	if err != nil {
+		return
+	}
+	return nil
+}
