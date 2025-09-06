@@ -115,15 +115,19 @@ func (u *profileUsecase) UpdateProfile(ctx context.Context, userID string, reque
 	}
 
 	nameAlias := ""
+	slugName := ""
 	if request.Name != "" {
 		nameAlias = utils.GenerateNameAlias(request.Name)
+		slugName = utils.GenerateSlugName(request.Name)
 	}
 
 	err = u.profileRepo.UpdateProfile(ctx, userID, &domain.UpdateProfile{
 		Name:          request.Name,
 		NameAlias:     nameAlias,
-		BirthDate:     birthDate,
 		Gender:        request.Gender,
+		BirthDate:     birthDate,
+		SlugName:      slugName,
+		AboutMe:       request.AboutMe,
 		InstitutionID: request.InstitutionID,
 		UpdatedAt:     time.Now().Unix(),
 		UpdatedBy:     profile.UserID,
