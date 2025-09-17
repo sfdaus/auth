@@ -1,11 +1,14 @@
 package request
 
+import "mime/multipart"
+
 type UpdateProfileReq struct {
-	Name          string `json:"name"`
-	Avatar        string `json:"avatar"`
-	Gender        string `json:"gender"`
-	BirthDate     string `json:"birth_date"`
-	SlugName      string `json:"slug_name"`
-	AboutMe       string `json:"about_me"`
-	InstitutionID string `json:"institution_id"`
+	Name          string                `form:"name"`
+	Avatar        *multipart.FileHeader `form:"avatar"`
+	Gender        string                `form:"gender"`
+	BirthDate     string                `form:"birth_date"`
+	SlugName      string                `form:"slug_name"`
+	AboutMe       string                `form:"about_me"`
+	InstitutionID string                `form:"institution_id"`
+	Linkedin      string                `form:"linkedin"`
 }

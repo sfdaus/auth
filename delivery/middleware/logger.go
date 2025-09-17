@@ -179,17 +179,53 @@ func (m *Middleware) CustomLogger() echo.MiddlewareFunc {
 				requestID = uuid.NewString()
 			}
 
-			// Read & restore request body
-			bodyBytes, _ := io.ReadAll(c.Request().Body)
+			// // Read & restore request body
+			// bodyBytes, _ := io.ReadAll(c.Request().Body)
 
-			// Compact JSON to remove whitespace but keep valid structure
-			var compacted bytes.Buffer
-			if json.Valid(bodyBytes) {
-				_ = json.Compact(&compacted, bodyBytes)
-				bodyBytes = compacted.Bytes()
+			// // Compact JSON to remove whitespace but keep valid structure
+			// var compacted bytes.Buffer
+			// if json.Valid(bodyBytes) {
+			// 	_ = json.Compact(&compacted, bodyBytes)
+			// 	bodyBytes = compacted.Bytes()
+			// }
+
+			// c.Request().Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+			// Detect content type
+			contentType := c.Request().Header.Get("Content-Type")
+			var bodyStr string
+			var bodyBytes []byte
+
+			if strings.HasPrefix(contentType, "multipart/form-data") {
+				// Parse multipart form (limit memory usage to 10MB here)
+				if err := c.Request().ParseMultipartForm(10 << 20); err == nil && c.Request().MultipartForm != nil {
+					files := []string{}
+					for key, fhs := range c.Request().MultipartForm.File {
+						for _, fh := range fhs {
+							files = append(files, fmt.Sprintf("%s(name=%s, size=%d)", key, fh.Filename, fh.Size))
+						}
+					}
+					bodyStr = fmt.Sprintf("[multipart form: %s]", strings.Join(files, ", "))
+				} else {
+					bodyStr = "[multipart/form-data unreadable]"
+				}
+
+				// Restore body (cannot fully restore binary parts)
+				c.Request().Body = http.MaxBytesReader(c.Response(), c.Request().Body, 10<<20)
+
+			} else {
+				// Normal JSON / text body
+				bodyBytes, _ = io.ReadAll(c.Request().Body)
+
+				// Compact JSON to remove whitespace
+				var compacted bytes.Buffer
+				if json.Valid(bodyBytes) {
+					_ = json.Compact(&compacted, bodyBytes)
+					bodyBytes = compacted.Bytes()
+				}
+
+				c.Request().Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+				bodyStr = string(bodyBytes)
 			}
-
-			c.Request().Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
 			// Capture response body
 			resBody := new(bytes.Buffer)
@@ -232,7 +268,7 @@ func (m *Middleware) CustomLogger() echo.MiddlewareFunc {
 				message,
 				c.Request().Method,
 				c.Request().URL.Path,
-				string(bodyBytes),
+				bodyStr,
 				resBody.String(),
 			)
 

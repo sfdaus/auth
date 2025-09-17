@@ -17,6 +17,7 @@ import (
 	httpDelivery "prakarsa-app/delivery/http"
 	appMiddleware "prakarsa-app/delivery/middleware"
 	"prakarsa-app/infrastructure/datastore"
+	filestorage "prakarsa-app/infrastructure/filestorage"
 	pgsqlRepository "prakarsa-app/repository/pgsql"
 	"prakarsa-app/usecase"
 
@@ -37,6 +38,7 @@ func main() {
 
 	// Setup infra
 	dbInstance, err := datastore.NewDatabase(configApp.DatabaseURL)
+	fileStorageInstance, err := filestorage.NewFileStorage(configApp)
 	utils.PanicIfNeeded(err)
 
 	// cacheInstance, err := datastore.NewCache(configApp.CacheURL)
@@ -56,7 +58,7 @@ func main() {
 	ctxTimeout := time.Duration(configApp.ContextTimeout) * time.Second
 	signUpUC := usecase.SignUpUsecase(userRepo, authTokenRepo, profileRepo, cryptoSvc, jwtSvc, ctxTimeout)
 	signInUC := usecase.SignInUsecase(userRepo, cryptoSvc, jwtSvc, ctxTimeout)
-	profileUC := usecase.ProfileUsecase(profileRepo, ctxTimeout)
+	profileUC := usecase.ProfileUsecase(profileRepo, ctxTimeout, fileStorageInstance)
 
 	// Setup app middleware
 	appMiddleware := appMiddleware.NewMiddleware(jwtSvc)

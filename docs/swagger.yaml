@@ -28,23 +28,6 @@ definitions:
       password:
         type: string
     type: object
-  request.UpdateProfileReq:
-    properties:
-      about_me:
-        type: string
-      avatar:
-        type: string
-      birth_date:
-        type: string
-      gender:
-        type: string
-      institution_id:
-        type: string
-      name:
-        type: string
-      slug_name:
-        type: string
-    type: object
 info:
   contact: {}
   termsOfService: http://swagger.io/terms/
@@ -138,7 +121,7 @@ paths:
   /api/v1/auth/update-profile:
     put:
       consumes:
-      - application/json
+      - multipart/form-data
       description: UpdateProfile
       parameters:
       - description: User ID from Gateway
@@ -146,12 +129,38 @@ paths:
         name: x-user-id
         required: true
         type: string
-      - description: UpdateProfile user
-        in: body
-        name: updateprofile
-        required: true
-        schema:
-          $ref: '#/definitions/request.UpdateProfileReq'
+      - description: Name
+        in: formData
+        name: name
+        type: string
+      - description: Avatar file
+        in: formData
+        name: avatar
+        type: file
+      - description: Gender
+        in: formData
+        name: gender
+        type: string
+      - description: Birth Date
+        in: formData
+        name: birth_date
+        type: string
+      - description: Slug Name
+        in: formData
+        name: slug_name
+        type: string
+      - description: About Me
+        in: formData
+        name: about_me
+        type: string
+      - description: Institution ID
+        in: formData
+        name: institution_id
+        type: string
+      - description: Linkedin URL
+        in: formData
+        name: linkedin
+        type: string
       produces:
       - application/json
       responses:

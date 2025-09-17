@@ -256,10 +256,17 @@ func (h *AuthHandler) UserProfile(c echo.Context) error {
 // @Summary UpdateProfile
 // @Description UpdateProfile
 // @Tags Auth
-// @Accept json
+// @Accept multipart/form-data
 // @Produce json
 // @Param x-user-id header string true "User ID from Gateway"
-// @Param updateprofile body request.UpdateProfileReq true "UpdateProfile user"
+// @Param name formData string false "Name"
+// @Param avatar formData file false "Avatar file"
+// @Param gender formData string false "Gender"
+// @Param birth_date formData string false "Birth Date"
+// @Param slug_name formData string false "Slug Name"
+// @Param about_me formData string false "About Me"
+// @Param institution_id formData string false "Institution ID"
+// @Param linkedin formData string false "Linkedin URL"
 // @Success 200
 // @Router /api/v1/auth/update-profile [put]
 func (h *AuthHandler) UpdateProfile(c echo.Context) error {
@@ -274,6 +281,11 @@ func (h *AuthHandler) UpdateProfile(c echo.Context) error {
 		})
 	}
 
+	fileHeader, err := c.FormFile("avatar")
+	if err == nil { // kalau ada file
+		req.Avatar = fileHeader
+	}
+
 	userID := c.Request().Header.Get("x-user-id")
 	if userID == "" {
 		return c.JSON(http.StatusUnauthorized, response.BasicResponse{
@@ -282,7 +294,7 @@ func (h *AuthHandler) UpdateProfile(c echo.Context) error {
 			Error:   constant.AuthorizationMessage.AuthorizationXUserIDMissing,
 		})
 	}
-	err := h.ProfileUC.UpdateProfile(ctx, userID, &req)
+	err = h.ProfileUC.UpdateProfile(ctx, userID, &req)
 	if err != nil {
 		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.UpdateProfileMessage.UpdateProfileFailed))
 	}

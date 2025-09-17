@@ -3,6 +3,7 @@ package pgsql
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"prakarsa-app/domain"
 )
 
@@ -52,7 +53,8 @@ func (r *pgsqlProfileRepository) GetUserProfileByUserID(ctx context.Context, use
 }
 
 func (r *pgsqlProfileRepository) UpdateProfile(ctx context.Context, userID string, updateProfile *domain.UpdateProfile) (err error) {
-	query := "UPDATE profiles SET name = COALESCE(NULLIF($1, ''), name), name_alias = COALESCE(NULLIF($2, ''), name_alias), avatar = COALESCE(NULLIF($3, ''), avatar), gender = COALESCE(NULLIF($4, ''), gender), birth_date = COALESCE(NULLIF(TO_DATE($5, 'YYYY-MM-DD'), DATE '0001-01-01'), birth_date), slug_name = COALESCE(NULLIF($6, ''), slug_name), about_me = COALESCE(NULLIF($7, ''), about_me), institution_id = COALESCE(NULLIF($8, ''), institution_id), updated_at = $9, updated_by = $10 WHERE user_id = $11"
-	_, err = r.db.ExecContext(ctx, query, updateProfile.Name, updateProfile.NameAlias, updateProfile.Avatar, updateProfile.Gender, updateProfile.BirthDate, updateProfile.SlugName, updateProfile.AboutMe, updateProfile.InstitutionID, updateProfile.UpdatedAt, updateProfile.UpdatedBy, userID)
+	fmt.Print(updateProfile.Avatar)
+	query := "UPDATE profiles SET name = COALESCE(NULLIF($1, ''), name), name_alias = COALESCE(NULLIF($2, ''), name_alias), avatar = COALESCE(NULLIF($3, ''), avatar), gender = COALESCE(NULLIF($4, ''), gender), birth_date = COALESCE(NULLIF(TO_DATE($5, 'YYYY-MM-DD'), DATE '0001-01-01'), birth_date), slug_name = COALESCE(NULLIF($6, ''), slug_name), about_me = COALESCE(NULLIF($7, ''), about_me), institution_id = COALESCE(NULLIF($8, ''), institution_id), updated_at = $9, updated_by = $10, linkedin = $11 WHERE user_id = $12"
+	_, err = r.db.ExecContext(ctx, query, updateProfile.Name, updateProfile.NameAlias, updateProfile.Avatar, updateProfile.Gender, updateProfile.BirthDate, updateProfile.SlugName, updateProfile.AboutMe, updateProfile.InstitutionID, updateProfile.UpdatedAt, updateProfile.UpdatedBy, updateProfile.Linkedin, userID)
 	return
 }

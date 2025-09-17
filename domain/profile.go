@@ -23,6 +23,7 @@ type Profile struct {
 	UpdatedAt     int64     `json:"updated_at"`
 	UpdatedBy     string    `json:"updated_by"`
 	DeletedAt     int64     `json:"deleted_at"`
+	Linkedin      string    `json:"linkedin"`
 }
 
 type UserProfile struct {
@@ -39,6 +40,7 @@ type UserProfile struct {
 	AboutMe       string `json:"about_me"`
 	InstitutionID string `json:"institution_id"`
 	JoinedAt      int64  `json:"joined_at"`
+	Linkedin      string `json:"linkedin"`
 }
 
 type CompleteProfile struct {
@@ -60,6 +62,7 @@ type UpdateProfile struct {
 	InstitutionID string    `json:"institution_id"`
 	UpdatedAt     int64     `json:"updated_at"`
 	UpdatedBy     string    `json:"updated_by"`
+	Linkedin      string    `json:"linkedin"`
 }
 
 type ProfileRepository interface {
