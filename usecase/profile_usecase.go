@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"prakarsa-app/config/constant"
 	"prakarsa-app/domain"
+	"prakarsa-app/infrastructure/filestorage"
 	"prakarsa-app/transport/request"
 	"prakarsa-app/utils"
 	"time"
@@ -13,12 +14,14 @@ import (
 type profileUsecase struct {
 	profileRepo    domain.ProfileRepository
 	contextTimeout time.Duration
+	fileStorage    filestorage.FileStorage
 }
 
-func ProfileUsecase(profileRepo domain.ProfileRepository, contextTimeout time.Duration) *profileUsecase {
+func ProfileUsecase(profileRepo domain.ProfileRepository, contextTimeout time.Duration, fileStorage filestorage.FileStorage) *profileUsecase {
 	return &profileUsecase{
 		profileRepo:    profileRepo,
 		contextTimeout: contextTimeout,
+		fileStorage:    fileStorage,
 	}
 }
 
@@ -90,6 +93,11 @@ func (u *profileUsecase) UserProfile(ctx context.Context, userID string) (domain
 		return domain.UserProfile{}, err
 	}
 
+	userProfile.Avatar, err = u.fileStorage.GetURL(ctx, userProfile.Avatar, time.Hour*24)
+	if err != nil {
+		return domain.UserProfile{}, err
+	}
+
 	return userProfile, nil
 }
 
@@ -114,11 +122,25 @@ func (u *profileUsecase) UpdateProfile(ctx context.Context, userID string, reque
 		}
 	}
 
-	nameAlias := ""
-	slugName := ""
+	nameAlias := profile.NameAlias
+	slugName := profile.SlugName
 	if request.Name != "" {
 		nameAlias = utils.GenerateNameAlias(request.Name)
 		slugName = utils.GenerateSlugName(request.Name)
+	}
+
+	avatarPath := profile.Avatar
+	if request.Avatar != nil {
+		fileAvatar, errFile := request.Avatar.Open()
+		if errFile != nil {
+			return errFile
+		}
+		defer fileAvatar.Close()
+
+		avatarPath, err = u.fileStorage.Put(ctx, "avatars/"+userID, fileAvatar)
+		if err != nil {
+			return
+		}
 	}
 
 	err = u.profileRepo.UpdateProfile(ctx, userID, &domain.UpdateProfile{
@@ -131,7 +153,10 @@ func (u *profileUsecase) UpdateProfile(ctx context.Context, userID string, reque
 		InstitutionID: request.InstitutionID,
 		UpdatedAt:     time.Now().Unix(),
 		UpdatedBy:     profile.UserID,
+		Avatar:        avatarPath,
+		Linkedin:      request.Linkedin,
 	})
+
 	if err != nil {
 		return
 	}

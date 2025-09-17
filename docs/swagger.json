@@ -140,7 +140,7 @@
             "put": {
                 "description": "UpdateProfile",
                 "consumes": [
-                    "application/json"
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -158,13 +158,52 @@
                         "required": true
                     },
                     {
-                        "description": "UpdateProfile user",
-                        "name": "updateprofile",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/request.UpdateProfileReq"
-                        }
+                        "type": "string",
+                        "description": "Name",
+                        "name": "name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Avatar file",
+                        "name": "avatar",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Gender",
+                        "name": "gender",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Birth Date",
+                        "name": "birth_date",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Slug Name",
+                        "name": "slug_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "About Me",
+                        "name": "about_me",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Institution ID",
+                        "name": "institution_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Linkedin URL",
+                        "name": "linkedin",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -246,32 +285,6 @@
                     "type": "string"
                 },
                 "password": {
-                    "type": "string"
-                }
-            }
-        },
-        "request.UpdateProfileReq": {
-            "type": "object",
-            "properties": {
-                "about_me": {
-                    "type": "string"
-                },
-                "avatar": {
-                    "type": "string"
-                },
-                "birth_date": {
-                    "type": "string"
-                },
-                "gender": {
-                    "type": "string"
-                },
-                "institution_id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "slug_name": {
                     "type": "string"
                 }
             }
