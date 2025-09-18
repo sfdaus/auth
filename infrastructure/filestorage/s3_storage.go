@@ -62,6 +62,10 @@ func (s *S3Storage) GetURL(ctx context.Context, key string, expiry time.Duration
 	params := make(url.Values)
 	params.Set("response-content-disposition", "inline")
 
+	if key == "" {
+		return "", nil
+	}
+
 	req, err := s.Client.PresignedGetObject(ctx, s.BucketName, key, expiry, params)
 	if err != nil {
 		return "", err
@@ -76,6 +80,10 @@ func (s *S3Storage) GetFile(ctx context.Context, key string) ([]byte, error) {
 		return nil, err
 	}
 	defer obj.Close()
+
+	if key == "" {
+		return nil, nil
+	}
 
 	buf := new(bytes.Buffer)
 	if _, err = io.Copy(buf, obj); err != nil {

@@ -14,6 +14,7 @@ type User struct {
 	PhoneNumber  string `json:"phone_number"`
 	Email        string `json:"email"`
 	TokenVersion string `json:"token_version"`
+	PublicID     string `json:"public_id"`
 	IsActive     bool   `json:"is_active"`
 	CreatedAt    int64  `json:"created_at"`
 	CreatedBy    string `json:"created_by"`
