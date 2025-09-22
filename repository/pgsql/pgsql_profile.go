@@ -24,7 +24,7 @@ func (r *pgsqlProfileRepository) Create(ctx context.Context, profile *domain.Pro
 }
 
 func (r *pgsqlProfileRepository) GetByUserID(ctx context.Context, userID string) (profile domain.Profile, err error) {
-	query := "SELECT user_id, name, name_alias, avatar, gender, birth_date, slug_name, about_me, institution_id, is_active, created_at, created_by, updated_at, updated_by, deleted_at FROM profiles WHERE user_id = $1"
+	query := "SELECT user_id, name, name_alias, avatar, gender, birth_date, slug_name, about_me, institution_id, is_active, created_at, created_by, updated_at, updated_by, deleted_at, linkedin FROM profiles WHERE user_id = $1"
 	err = r.db.QueryRowContext(ctx, query, userID).Scan(&profile.UserID, &profile.Name, &profile.NameAlias, &profile.Avatar, &profile.Gender, &profile.BirthDate, &profile.SlugName, &profile.AboutMe, &profile.InstitutionID, &profile.IsActive, &profile.CreatedAt, &profile.CreatedBy, &profile.UpdatedAt, &profile.UpdatedBy, &profile.DeletedAt)
 	return
 }
@@ -38,7 +38,7 @@ func (r *pgsqlProfileRepository) CompleteProfile(ctx context.Context, userID str
 func (r *pgsqlProfileRepository) GetUserProfileByUserID(ctx context.Context, userID string) (userProfile domain.UserProfile, err error) {
 	query := `
 		SELECT p.user_id, u.username, u.phone_number, u.email, p.name, p.name_alias, p.avatar, p.gender,
-		       p.birth_date, p.slug_name, p.about_me, p.institution_id, p.created_at AS joined_at
+		       p.birth_date, p.slug_name, p.about_me, p.institution_id, p.created_at AS joined_at, p.linkedin
 		FROM profiles p
 		JOIN users u ON p.user_id = u.id
 		WHERE p.user_id = $1
@@ -47,14 +47,14 @@ func (r *pgsqlProfileRepository) GetUserProfileByUserID(ctx context.Context, use
 		&userProfile.UserID, &userProfile.Username, &userProfile.PhoneNumber, &userProfile.Email,
 		&userProfile.Name, &userProfile.NameAlias, &userProfile.Avatar, &userProfile.Gender,
 		&userProfile.BirthDate, &userProfile.SlugName, &userProfile.AboutMe, &userProfile.InstitutionID,
-		&userProfile.JoinedAt,
+		&userProfile.JoinedAt, &userProfile.Linkedin,
 	)
 	return
 }
 
 func (r *pgsqlProfileRepository) UpdateProfile(ctx context.Context, userID string, updateProfile *domain.UpdateProfile) (err error) {
 	fmt.Print(updateProfile.Avatar)
-	query := "UPDATE profiles SET name = COALESCE(NULLIF($1, ''), name), name_alias = COALESCE(NULLIF($2, ''), name_alias), avatar = COALESCE(NULLIF($3, ''), avatar), gender = COALESCE(NULLIF($4, ''), gender), birth_date = COALESCE(NULLIF(TO_DATE($5, 'YYYY-MM-DD'), DATE '0001-01-01'), birth_date), slug_name = COALESCE(NULLIF($6, ''), slug_name), about_me = COALESCE(NULLIF($7, ''), about_me), institution_id = COALESCE(NULLIF($8, ''), institution_id), updated_at = $9, updated_by = $10, linkedin = $11 WHERE user_id = $12"
+	query := "UPDATE profiles SET name = COALESCE(NULLIF($1, ''), name), name_alias = COALESCE(NULLIF($2, ''), name_alias), avatar = COALESCE(NULLIF($3, ''), avatar), gender = COALESCE(NULLIF($4, ''), gender), birth_date = COALESCE(NULLIF(TO_DATE($5, 'YYYY-MM-DD'), DATE '0001-01-01'), birth_date), slug_name = COALESCE(NULLIF($6, ''), slug_name), about_me = COALESCE(NULLIF($7, ''), about_me), institution_id = COALESCE(NULLIF($8, ''), institution_id), updated_at = $9, updated_by = $10, linkedin = COALESCE(NULLIF($11, ''), linkedin) WHERE user_id = $12"
 	_, err = r.db.ExecContext(ctx, query, updateProfile.Name, updateProfile.NameAlias, updateProfile.Avatar, updateProfile.Gender, updateProfile.BirthDate, updateProfile.SlugName, updateProfile.AboutMe, updateProfile.InstitutionID, updateProfile.UpdatedAt, updateProfile.UpdatedBy, updateProfile.Linkedin, userID)
 	return
 }
