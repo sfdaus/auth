@@ -138,12 +138,13 @@ func (u *profileUsecase) UpdateProfile(ctx context.Context, userID string, reque
 	if request.Name != "" {
 		nameAlias = utils.GenerateNameAlias(request.Name)
 		slugName = utils.GenerateSlugName(request.Name)
+		updateProfilePayload.Name = request.Name
 	} else {
 		nameAlias = profile.NameAlias
 		slugName = profile.SlugName
 	}
 	updateProfilePayload.SlugName = slugName
-	updateProfilePayload.Name = nameAlias
+	updateProfilePayload.NameAlias = nameAlias
 
 	avatarPath := profile.Avatar
 	if request.Avatar != nil {
