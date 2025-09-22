@@ -3,12 +3,12 @@ package filestorage
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"mime"
 	"net/http"
 	"net/url"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/minio/minio-go/v7"
@@ -36,25 +36,65 @@ func NewS3Storage(endpoint, accessKey, secretKey, bucketName string, useSSL bool
 }
 
 func (s *S3Storage) Put(ctx context.Context, key string, data io.Reader) (string, error) {
-	ext := filepath.Ext(key) // ambil extension dari nama file
-	mimeType := mime.TypeByExtension(ext)
-	if mimeType == "" {
-		// fallback → coba sniff dari isi file
-		buf := make([]byte, 512)
-		n, _ := data.Read(buf)
-		mimeType = http.DetectContentType(buf[:n])
+	// sniff max 512 bytes untuk deteksi MIME
+	var sniff [512]byte
+	n, _ := io.ReadFull(data, sniff[:]) // jika file <512B, error bisa diabaikan
+	detectedCT := http.DetectContentType(sniff[:n])
 
-		// reset reader ke awal karena udah di-read
-		data = io.MultiReader(bytes.NewReader(buf[:n]), data)
+	// reset reader ke awal
+	data = io.MultiReader(bytes.NewReader(sniff[:n]), data)
+
+	// jika key belum punya ekstensi → tambahkan dari content-type
+	key = ensureExtIfMissing(key, detectedCT)
+
+	// tentukan Content-Type final
+	mimeType := detectedCT
+	if mimeType == "" {
+		if mt := mime.TypeByExtension(filepath.Ext(key)); mt != "" {
+			mimeType = mt
+		} else {
+			mimeType = "application/octet-stream"
+		}
 	}
 
-	_, err := s.Client.PutObject(ctx, s.BucketName, key, data, -1, minio.PutObjectOptions{ContentType: mimeType})
+	_, err := s.Client.PutObject(ctx, s.BucketName, key, data, -1, minio.PutObjectOptions{
+		ContentType: mimeType,
+	})
 	if err != nil {
 		return "", err
 	}
 
-	url := fmt.Sprintf("%s", key)
-	return url, nil
+	// kembalikan key final (sudah plus ekstensi)
+	return key, nil
+}
+
+func ensureExtIfMissing(key, contentType string) string {
+	// kalau sudah ada ekstensi, biarkan
+	if filepath.Ext(key) != "" {
+		return key
+	}
+
+	// ambil hanya media type-nya (buang parameter ;charset=)
+	if mt, _, err := mime.ParseMediaType(contentType); err == nil && mt != "" {
+		// coba dari registry MIME
+		if exts, _ := mime.ExtensionsByType(mt); len(exts) > 0 {
+			return key + strings.ToLower(exts[0])
+		}
+		// fallback manual untuk tipe umum
+		switch strings.ToLower(mt) {
+		case "image/jpeg", "image/jpg":
+			return key + ".jpg"
+		case "image/png":
+			return key + ".png"
+		case "image/webp":
+			return key + ".webp"
+		case "image/gif":
+			return key + ".gif"
+		}
+	}
+
+	// fallback terakhir
+	return key + ".jpg"
 }
 
 // GetURL → generate presigned URL

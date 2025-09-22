@@ -115,19 +115,35 @@ func (u *profileUsecase) UpdateProfile(ctx context.Context, userID string, reque
 	}
 
 	var birthDate time.Time
+
+	updateProfilePayload := &domain.UpdateProfile{
+		Gender:        request.Gender,
+		AboutMe:       request.AboutMe,
+		InstitutionID: request.InstitutionID,
+		UpdatedAt:     time.Now().Unix(),
+		UpdatedBy:     profile.UserID,
+		Linkedin:      request.Linkedin,
+	}
+
 	if request.BirthDate != "" {
 		birthDate, err = utils.ParseDateYYYYMMDD(request.BirthDate)
 		if err != nil {
 			return
 		}
+
+		updateProfilePayload.BirthDate = birthDate
 	}
 
-	nameAlias := profile.NameAlias
-	slugName := profile.SlugName
+	var nameAlias, slugName string
 	if request.Name != "" {
 		nameAlias = utils.GenerateNameAlias(request.Name)
 		slugName = utils.GenerateSlugName(request.Name)
+	} else {
+		nameAlias = profile.NameAlias
+		slugName = profile.SlugName
 	}
+	updateProfilePayload.SlugName = slugName
+	updateProfilePayload.Name = nameAlias
 
 	avatarPath := profile.Avatar
 	if request.Avatar != nil {
@@ -142,20 +158,9 @@ func (u *profileUsecase) UpdateProfile(ctx context.Context, userID string, reque
 			return
 		}
 	}
+	updateProfilePayload.Avatar = avatarPath
 
-	err = u.profileRepo.UpdateProfile(ctx, userID, &domain.UpdateProfile{
-		Name:          request.Name,
-		NameAlias:     nameAlias,
-		Gender:        request.Gender,
-		BirthDate:     birthDate,
-		SlugName:      slugName,
-		AboutMe:       request.AboutMe,
-		InstitutionID: request.InstitutionID,
-		UpdatedAt:     time.Now().Unix(),
-		UpdatedBy:     profile.UserID,
-		Avatar:        avatarPath,
-		Linkedin:      request.Linkedin,
-	})
+	err = u.profileRepo.UpdateProfile(ctx, userID, updateProfilePayload)
 
 	if err != nil {
 		return
