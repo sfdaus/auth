@@ -56,3 +56,18 @@ func (r *pgsqlProfileRepository) UpdateProfile(ctx context.Context, userID strin
 	_, err = r.db.ExecContext(ctx, query, updateProfile.Name, updateProfile.NameAlias, updateProfile.Avatar, updateProfile.Gender, updateProfile.BirthDate, updateProfile.SlugName, updateProfile.AboutMe, updateProfile.InstitutionID, updateProfile.Linkedin, updateProfile.UpdatedAt, updateProfile.UpdatedBy, userID)
 	return
 }
+
+func (r *pgsqlProfileRepository) GetUserProfileByPublicID(ctx context.Context, publicID string, userID string) (userProfile domain.SecureUserProfile, err error) {
+	query := `
+		SELECT p.name, p.name_alias, p.avatar, p.slug_name, p.about_me, p.institution_id, p.created_at AS joined_at, p.linkedin,
+		       (u.id = $2) AS is_my_profile
+		FROM profiles p
+		JOIN users u ON p.user_id = u.id
+		WHERE u.public_id = $1
+	`
+	err = r.db.QueryRowContext(ctx, query, publicID, userID).Scan(
+		&userProfile.Name, &userProfile.NameAlias, &userProfile.Avatar, &userProfile.SlugName, &userProfile.AboutMe, &userProfile.InstitutionID,
+		&userProfile.JoinedAt, &userProfile.Linkedin, &userProfile.IsMyProfile,
+	)
+	return
+}
