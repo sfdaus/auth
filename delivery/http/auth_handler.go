@@ -35,6 +35,7 @@ func NewAuthHandler(e *echo.Echo, middleware *middleware.Middleware, signUpUC do
 	apiV1.GET("/auth/profile-completion", handler.ProfileCompletion)
 	apiV1.GET("/auth/user-profile", handler.UserProfile)
 	apiV1.PUT("/auth/update-profile", handler.UpdateProfile)
+	apiV1.GET("/auth/:public_id/user-profile", handler.UserProfileByID)
 }
 
 // SignUp godoc
@@ -302,5 +303,43 @@ func (h *AuthHandler) UpdateProfile(c echo.Context) error {
 	return c.JSON(http.StatusOK, response.BasicResponse{
 		Status:  constant.Status.Success,
 		Message: constant.UpdateProfileMessage.UpdateProfileSuccess,
+	})
+}
+
+// UserProfileByID godoc
+// @Summary UserProfileByID
+// @Description UserProfileByID
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param x-user-id header string true "User ID from Gateway"
+// @Success 200
+// @Router /api/v1/auth/:id/user-profile [get]
+func (h *AuthHandler) UserProfileByID(c echo.Context) error {
+	ctx := c.Request().Context()
+	var req request.UserProfileByIDReq
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, utils.NewUnprocessableEntityError(err.Error()))
+	}
+
+	req.UserID = c.Request().Header.Get("x-user-id")
+
+	if err := req.Validate(); err != nil {
+		errVal := err.(validation.Errors)
+		return c.JSON(http.StatusBadRequest, utils.NewInvalidInputError(errVal))
+	}
+
+	userProfile, err := h.ProfileUC.UserProfileByID(ctx, &req)
+	if err != nil {
+		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.UserProfileMessage.UserProfileFailed))
+	}
+
+	return c.JSON(http.StatusOK, response.UserProfileResponse{
+		BasicResponse: response.BasicResponse{
+			Status:  constant.Status.Success,
+			Message: constant.UserProfileMessage.UserProfileSuccess,
+		},
+		Data: userProfile,
 	})
 }

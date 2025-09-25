@@ -169,3 +169,24 @@ func (u *profileUsecase) UpdateProfile(ctx context.Context, userID string, reque
 	}
 	return nil
 }
+
+func (u *profileUsecase) UserProfileByID(ctx context.Context, request *request.UserProfileByIDReq) (userProfile domain.SecureUserProfile, err error) {
+	ctx, cancel := context.WithTimeout(ctx, u.contextTimeout)
+	defer cancel()
+
+	userProfile, err = u.profileRepo.GetUserProfileByPublicID(ctx, request.PublicID, request.UserID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			err = utils.NewBadRequestError(constant.UserProfileMessage.UserProfileUserNotFound)
+			return domain.SecureUserProfile{}, err
+		}
+		return domain.SecureUserProfile{}, err
+	}
+
+	userProfile.Avatar, err = u.fileStorage.GetURL(ctx, userProfile.Avatar, time.Hour*24)
+	if err != nil {
+		return domain.SecureUserProfile{}, err
+	}
+
+	return userProfile, nil
+}
