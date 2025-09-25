@@ -68,11 +68,12 @@ func main() {
 	e.Use(middleware.CORS())
 	// e.Use(appMiddleware.Logger(nil))
 	e.Use(appMiddleware.CustomLogger())
+	e.Logger.Info("🚀 Server is alive and running")
 
 	// Setup handler
 	e.GET("/api/v1/auth/swagger/*", echoSwagger.WrapHandler)
 	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "i am alive")
+		return c.NoContent(http.StatusOK)
 	})
 
 	httpDelivery.NewAuthHandler(e, appMiddleware, signUpUC, signInUC, profileUC)
