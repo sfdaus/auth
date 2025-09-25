@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"database/sql"
+	"github.com/google/uuid"
 	"prakarsa-app/config/constant"
 	"prakarsa-app/domain"
 	"prakarsa-app/infrastructure/filestorage"
@@ -154,7 +155,7 @@ func (u *profileUsecase) UpdateProfile(ctx context.Context, userID string, reque
 		}
 		defer fileAvatar.Close()
 
-		avatarPath, err = u.fileStorage.Put(ctx, "avatars/"+userID, fileAvatar)
+		avatarPath, err = u.fileStorage.Put(ctx, "avatars/"+uuid.NewString(), fileAvatar)
 		if err != nil {
 			return
 		}
