@@ -118,6 +118,57 @@ paths:
       summary: SignUp
       tags:
       - Auth
+  /api/v1/auth/update-profile:
+    put:
+      consumes:
+      - multipart/form-data
+      description: UpdateProfile
+      parameters:
+      - description: User ID from Gateway
+        in: header
+        name: x-user-id
+        required: true
+        type: string
+      - description: Name
+        in: formData
+        name: name
+        type: string
+      - description: Avatar file
+        in: formData
+        name: avatar
+        type: file
+      - description: Gender
+        in: formData
+        name: gender
+        type: string
+      - description: Birth Date
+        in: formData
+        name: birth_date
+        type: string
+      - description: Slug Name
+        in: formData
+        name: slug_name
+        type: string
+      - description: About Me
+        in: formData
+        name: about_me
+        type: string
+      - description: Institution ID
+        in: formData
+        name: institution_id
+        type: string
+      - description: Linkedin URL
+        in: formData
+        name: linkedin
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: UpdateProfile
+      tags:
+      - Auth
   /api/v1/auth/user-profile:
     get:
       consumes:

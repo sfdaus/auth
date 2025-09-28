@@ -145,6 +145,83 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/auth/update-profile": {
+            "put": {
+                "description": "UpdateProfile",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "UpdateProfile",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID from Gateway",
+                        "name": "x-user-id",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name",
+                        "name": "name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Avatar file",
+                        "name": "avatar",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Gender",
+                        "name": "gender",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Birth Date",
+                        "name": "birth_date",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Slug Name",
+                        "name": "slug_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "About Me",
+                        "name": "about_me",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Institution ID",
+                        "name": "institution_id",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Linkedin URL",
+                        "name": "linkedin",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/api/v1/auth/user-profile": {
             "get": {
                 "description": "UserProfile",

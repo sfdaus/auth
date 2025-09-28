@@ -165,11 +165,22 @@ func (w *bodyDumpResponseWriter) Write(b []byte) (int, error) {
 func (m *Middleware) CustomLogger() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			// Skip logging untuk swagger, favicon, atau healthcheck
-			path := c.Request().URL.Path
-			if strings.HasPrefix(path, "/api/v1/auth/swagger") || path == "/favicon.ico" || path == "/health" {
+			// ambil path yang bener (kadang c.Path() kosong sebelum match)
+			path := c.Path()
+			if path == "" {
+				path = c.Request().URL.Path
+			}
+			ua := c.Request().Header.Get("User-Agent")
+
+			// skip root, health endpoints, swagger, favicon, dan kube-probe/kubelet
+			if path == "/" ||
+				path == "/health" || path == "/healthz" || path == "/readyz" ||
+				strings.HasPrefix(path, "/api/v1/auth/swagger") ||
+				path == "/favicon.ico" ||
+				strings.HasPrefix(ua, "kube-probe") || strings.HasPrefix(ua, "kubelet") {
 				return next(c)
 			}
+			// --- END SKIP SECTION ---
 
 			start := time.Now()
 
@@ -179,17 +190,34 @@ func (m *Middleware) CustomLogger() echo.MiddlewareFunc {
 				requestID = uuid.NewString()
 			}
 
-			// Read & restore request body
-			bodyBytes, _ := io.ReadAll(c.Request().Body)
+			// Detect content type
+			contentType := c.Request().Header.Get("Content-Type")
+			var bodyStr string
+			var bodyBytes []byte
 
-			// Compact JSON to remove whitespace but keep valid structure
-			var compacted bytes.Buffer
-			if json.Valid(bodyBytes) {
-				_ = json.Compact(&compacted, bodyBytes)
-				bodyBytes = compacted.Bytes()
+			if strings.HasPrefix(contentType, "multipart/form-data") {
+				if err := c.Request().ParseMultipartForm(10 << 20); err == nil && c.Request().MultipartForm != nil {
+					files := []string{}
+					for key, fhs := range c.Request().MultipartForm.File {
+						for _, fh := range fhs {
+							files = append(files, fmt.Sprintf("%s(name=%s, size=%d)", key, fh.Filename, fh.Size))
+						}
+					}
+					bodyStr = fmt.Sprintf("[multipart form: %s]", strings.Join(files, ", "))
+				} else {
+					bodyStr = "[multipart/form-data unreadable]"
+				}
+				c.Request().Body = http.MaxBytesReader(c.Response(), c.Request().Body, 10<<20)
+			} else {
+				bodyBytes, _ = io.ReadAll(c.Request().Body)
+				var compacted bytes.Buffer
+				if json.Valid(bodyBytes) {
+					_ = json.Compact(&compacted, bodyBytes)
+					bodyBytes = compacted.Bytes()
+				}
+				c.Request().Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+				bodyStr = string(bodyBytes)
 			}
-
-			c.Request().Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
 			// Capture response body
 			resBody := new(bytes.Buffer)
@@ -205,7 +233,6 @@ func (m *Middleware) CustomLogger() echo.MiddlewareFunc {
 			// Determine log level and message
 			statusCode := c.Response().Status
 			var level, message string
-
 			if err != nil || statusCode >= 400 {
 				level = "ERROR"
 				message = "error"
@@ -223,7 +250,6 @@ func (m *Middleware) CustomLogger() echo.MiddlewareFunc {
 				levelColor = ColorYellow
 			}
 
-			// Print log
 			fmt.Printf("[%s %s%s%s requestId=%s, statusCode=%s-%s, method=%s, path=%s, requestBody=%s, responseBody=%s]\n",
 				start.Format("2006-01-02 15:04:05"),
 				levelColor, level, ColorReset,
@@ -231,8 +257,8 @@ func (m *Middleware) CustomLogger() echo.MiddlewareFunc {
 				http.StatusText(statusCode),
 				message,
 				c.Request().Method,
-				c.Request().URL.Path,
-				string(bodyBytes),
+				path,
+				bodyStr,
 				resBody.String(),
 			)
 

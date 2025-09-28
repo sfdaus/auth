@@ -93,3 +93,15 @@ var UserProfileMessage = UserProfileResponseMessage{
 	UserProfileFailed:       "Failed to retrieve user profile",
 	UserProfileUserNotFound: "User not found",
 }
+
+type UpdateProfileResponseMessage struct {
+	UpdateProfileSuccess      string
+	UpdateProfileFailed       string
+	UpdateProfileUserNotFound string
+}
+
+var UpdateProfileMessage = UpdateProfileResponseMessage{
+	UpdateProfileSuccess:      "Update profile successful",
+	UpdateProfileFailed:       "Update profile failed",
+	UpdateProfileUserNotFound: "User not found",
+}

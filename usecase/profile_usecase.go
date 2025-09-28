@@ -3,8 +3,10 @@ package usecase
 import (
 	"context"
 	"database/sql"
+	"github.com/google/uuid"
 	"prakarsa-app/config/constant"
 	"prakarsa-app/domain"
+	"prakarsa-app/infrastructure/filestorage"
 	"prakarsa-app/transport/request"
 	"prakarsa-app/utils"
 	"time"
@@ -13,12 +15,14 @@ import (
 type profileUsecase struct {
 	profileRepo    domain.ProfileRepository
 	contextTimeout time.Duration
+	fileStorage    filestorage.FileStorage
 }
 
-func ProfileUsecase(profileRepo domain.ProfileRepository, contextTimeout time.Duration) *profileUsecase {
+func ProfileUsecase(profileRepo domain.ProfileRepository, contextTimeout time.Duration, fileStorage filestorage.FileStorage) *profileUsecase {
 	return &profileUsecase{
 		profileRepo:    profileRepo,
 		contextTimeout: contextTimeout,
+		fileStorage:    fileStorage,
 	}
 }
 
@@ -88,6 +92,100 @@ func (u *profileUsecase) UserProfile(ctx context.Context, userID string) (domain
 			return domain.UserProfile{}, err
 		}
 		return domain.UserProfile{}, err
+	}
+
+	userProfile.Avatar, err = u.fileStorage.GetURL(ctx, userProfile.Avatar, time.Hour*24)
+	if err != nil {
+		return domain.UserProfile{}, err
+	}
+
+	return userProfile, nil
+}
+
+func (u *profileUsecase) UpdateProfile(ctx context.Context, userID string, request *request.UpdateProfileReq) (err error) {
+	ctx, cancel := context.WithTimeout(ctx, u.contextTimeout)
+	defer cancel()
+
+	profile, err := u.profileRepo.GetByUserID(ctx, userID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			err = utils.NewBadRequestError(constant.UserProfileMessage.UserProfileUserNotFound)
+			return
+		}
+		return
+	}
+
+	var birthDate time.Time
+
+	updateProfilePayload := &domain.UpdateProfile{
+		Gender:        request.Gender,
+		AboutMe:       request.AboutMe,
+		InstitutionID: request.InstitutionID,
+		UpdatedAt:     time.Now().Unix(),
+		UpdatedBy:     profile.UserID,
+		Linkedin:      request.Linkedin,
+	}
+
+	if request.BirthDate != "" {
+		birthDate, err = utils.ParseDateYYYYMMDD(request.BirthDate)
+		if err != nil {
+			return
+		}
+
+		updateProfilePayload.BirthDate = birthDate
+	}
+
+	var nameAlias, slugName string
+	if request.Name != "" {
+		nameAlias = utils.GenerateNameAlias(request.Name)
+		slugName = utils.GenerateSlugName(request.Name)
+		updateProfilePayload.Name = request.Name
+	} else {
+		nameAlias = profile.NameAlias
+		slugName = profile.SlugName
+	}
+	updateProfilePayload.SlugName = slugName
+	updateProfilePayload.NameAlias = nameAlias
+
+	avatarPath := profile.Avatar
+	if request.Avatar != nil {
+		fileAvatar, errFile := request.Avatar.Open()
+		if errFile != nil {
+			return errFile
+		}
+		defer fileAvatar.Close()
+
+		avatarPath, err = u.fileStorage.Put(ctx, "avatars/"+uuid.NewString(), fileAvatar)
+		if err != nil {
+			return
+		}
+	}
+	updateProfilePayload.Avatar = avatarPath
+
+	err = u.profileRepo.UpdateProfile(ctx, userID, updateProfilePayload)
+
+	if err != nil {
+		return
+	}
+	return nil
+}
+
+func (u *profileUsecase) UserProfileByID(ctx context.Context, request *request.UserProfileByIDReq) (userProfile domain.SecureUserProfile, err error) {
+	ctx, cancel := context.WithTimeout(ctx, u.contextTimeout)
+	defer cancel()
+
+	userProfile, err = u.profileRepo.GetUserProfileByPublicID(ctx, request.PublicID, request.UserID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			err = utils.NewBadRequestError(constant.UserProfileMessage.UserProfileUserNotFound)
+			return domain.SecureUserProfile{}, err
+		}
+		return domain.SecureUserProfile{}, err
+	}
+
+	userProfile.Avatar, err = u.fileStorage.GetURL(ctx, userProfile.Avatar, time.Hour*24)
+	if err != nil {
+		return domain.SecureUserProfile{}, err
 	}
 
 	return userProfile, nil

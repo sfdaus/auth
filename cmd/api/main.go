@@ -17,6 +17,7 @@ import (
 	httpDelivery "prakarsa-app/delivery/http"
 	appMiddleware "prakarsa-app/delivery/middleware"
 	"prakarsa-app/infrastructure/datastore"
+	filestorage "prakarsa-app/infrastructure/filestorage"
 	pgsqlRepository "prakarsa-app/repository/pgsql"
 	"prakarsa-app/usecase"
 
@@ -37,6 +38,7 @@ func main() {
 
 	// Setup infra
 	dbInstance, err := datastore.NewDatabase(configApp.DatabaseURL)
+	fileStorageInstance, err := filestorage.NewFileStorage(configApp)
 	utils.PanicIfNeeded(err)
 
 	// cacheInstance, err := datastore.NewCache(configApp.CacheURL)
@@ -56,7 +58,7 @@ func main() {
 	ctxTimeout := time.Duration(configApp.ContextTimeout) * time.Second
 	signUpUC := usecase.SignUpUsecase(userRepo, authTokenRepo, profileRepo, cryptoSvc, jwtSvc, ctxTimeout)
 	signInUC := usecase.SignInUsecase(userRepo, cryptoSvc, jwtSvc, ctxTimeout)
-	profileUC := usecase.ProfileUsecase(profileRepo, ctxTimeout)
+	profileUC := usecase.ProfileUsecase(profileRepo, ctxTimeout, fileStorageInstance)
 
 	// Setup app middleware
 	appMiddleware := appMiddleware.NewMiddleware(jwtSvc)
@@ -66,11 +68,12 @@ func main() {
 	e.Use(middleware.CORS())
 	// e.Use(appMiddleware.Logger(nil))
 	e.Use(appMiddleware.CustomLogger())
+	e.Logger.Info("🚀 Server is alive and running")
 
 	// Setup handler
 	e.GET("/api/v1/auth/swagger/*", echoSwagger.WrapHandler)
 	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "i am alive")
+		return c.NoContent(http.StatusOK)
 	})
 
 	httpDelivery.NewAuthHandler(e, appMiddleware, signUpUC, signInUC, profileUC)

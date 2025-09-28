@@ -34,6 +34,8 @@ func NewAuthHandler(e *echo.Echo, middleware *middleware.Middleware, signUpUC do
 	apiV1.POST("/auth/complete-profile", handler.CompleteProfile)
 	apiV1.GET("/auth/profile-completion", handler.ProfileCompletion)
 	apiV1.GET("/auth/user-profile", handler.UserProfile)
+	apiV1.PUT("/auth/update-profile", handler.UpdateProfile)
+	apiV1.GET("/auth/:public_id/user-profile", handler.UserProfileByID)
 }
 
 // SignUp godoc
@@ -238,6 +240,97 @@ func (h *AuthHandler) UserProfile(c echo.Context) error {
 		})
 	}
 	userProfile, err := h.ProfileUC.UserProfile(ctx, userID)
+	if err != nil {
+		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.UserProfileMessage.UserProfileFailed))
+	}
+
+	return c.JSON(http.StatusOK, response.UserProfileResponse{
+		BasicResponse: response.BasicResponse{
+			Status:  constant.Status.Success,
+			Message: constant.UserProfileMessage.UserProfileSuccess,
+		},
+		Data: userProfile,
+	})
+}
+
+// UpdateProfile godoc
+// @Summary UpdateProfile
+// @Description UpdateProfile
+// @Tags Auth
+// @Accept multipart/form-data
+// @Produce json
+// @Param x-user-id header string true "User ID from Gateway"
+// @Param name formData string false "Name"
+// @Param avatar formData file false "Avatar file"
+// @Param gender formData string false "Gender"
+// @Param birth_date formData string false "Birth Date"
+// @Param slug_name formData string false "Slug Name"
+// @Param about_me formData string false "About Me"
+// @Param institution_id formData string false "Institution ID"
+// @Param linkedin formData string false "Linkedin URL"
+// @Success 200
+// @Router /api/v1/auth/update-profile [put]
+func (h *AuthHandler) UpdateProfile(c echo.Context) error {
+	ctx := c.Request().Context()
+	var req request.UpdateProfileReq
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.UpdateProfileMessage.UpdateProfileFailed,
+			Error:   err.Error(),
+		})
+	}
+
+	fileHeader, err := c.FormFile("avatar")
+	if err == nil { // kalau ada file
+		req.Avatar = fileHeader
+	}
+
+	userID := c.Request().Header.Get("x-user-id")
+	if userID == "" {
+		return c.JSON(http.StatusUnauthorized, response.BasicResponse{
+			Status:  constant.Status.Error,
+			Message: constant.UpdateProfileMessage.UpdateProfileFailed,
+			Error:   constant.AuthorizationMessage.AuthorizationXUserIDMissing,
+		})
+	}
+	err = h.ProfileUC.UpdateProfile(ctx, userID, &req)
+	if err != nil {
+		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.UpdateProfileMessage.UpdateProfileFailed))
+	}
+
+	return c.JSON(http.StatusOK, response.BasicResponse{
+		Status:  constant.Status.Success,
+		Message: constant.UpdateProfileMessage.UpdateProfileSuccess,
+	})
+}
+
+// UserProfileByID godoc
+// @Summary UserProfileByID
+// @Description UserProfileByID
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param x-user-id header string true "User ID from Gateway"
+// @Success 200
+// @Router /api/v1/auth/:id/user-profile [get]
+func (h *AuthHandler) UserProfileByID(c echo.Context) error {
+	ctx := c.Request().Context()
+	var req request.UserProfileByIDReq
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, utils.NewUnprocessableEntityError(err.Error()))
+	}
+
+	req.UserID = c.Request().Header.Get("x-user-id")
+
+	if err := req.Validate(); err != nil {
+		errVal := err.(validation.Errors)
+		return c.JSON(http.StatusBadRequest, utils.NewInvalidInputError(errVal))
+	}
+
+	userProfile, err := h.ProfileUC.UserProfileByID(ctx, &req)
 	if err != nil {
 		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.UserProfileMessage.UserProfileFailed))
 	}
