@@ -37,7 +37,7 @@ func (r *pgsqlProfileRepository) CompleteProfile(ctx context.Context, userID str
 func (r *pgsqlProfileRepository) GetUserProfileByUserID(ctx context.Context, userID string) (userProfile domain.UserProfile, err error) {
 	query := `
 		SELECT p.user_id, u.username, u.phone_number, u.email, p.name, p.name_alias, p.avatar, p.gender,
-		       p.birth_date, p.slug_name, p.about_me, p.institution_id, p.created_at AS joined_at, p.linkedin
+		       p.birth_date, p.slug_name, p.about_me, p.institution_id, p.created_at AS joined_at, COALESCE(p.linkedin, '') as linkedin
 		FROM profiles p
 		JOIN users u ON p.user_id = u.id
 		WHERE p.user_id = $1
