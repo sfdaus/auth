@@ -11,36 +11,36 @@ type Profile struct {
 	UserID        string    `json:"user_id"`
 	Name          string    `json:"name"`
 	NameAlias     string    `json:"name_alias"`
-	Avatar        string    `json:"avatar"`
+	Avatar        *string   `json:"avatar"`
 	Gender        string    `json:"gender"`
 	BirthDate     time.Time `json:"birth_date"`
 	SlugName      string    `json:"slug_name"`
-	AboutMe       string    `json:"about_me"`
-	InstitutionID string    `json:"institution_id"`
+	AboutMe       *string   `json:"about_me"`
+	InstitutionID *string   `json:"institution_id"`
 	IsActive      bool      `json:"is_active"`
 	CreatedAt     int64     `json:"created_at"`
 	CreatedBy     string    `json:"created_by"`
 	UpdatedAt     int64     `json:"updated_at"`
 	UpdatedBy     string    `json:"updated_by"`
 	DeletedAt     int64     `json:"deleted_at"`
-	Linkedin      string    `json:"linkedin"`
+	Linkedin      *string   `json:"linkedin"`
 }
 
 type UserProfile struct {
-	UserID        string `json:"user_id"`
-	Username      string `json:"username"`
-	PhoneNumber   string `json:"phone_number"`
-	Email         string `json:"email"`
-	Name          string `json:"name"`
-	NameAlias     string `json:"name_alias"`
-	Avatar        string `json:"avatar"`
-	Gender        string `json:"gender"`
-	BirthDate     string `json:"birth_date"`
-	SlugName      string `json:"slug_name"`
-	AboutMe       string `json:"about_me"`
-	InstitutionID string `json:"institution_id"`
-	JoinedAt      int64  `json:"joined_at"`
-	Linkedin      string `json:"linkedin"`
+	UserID        string  `json:"user_id"`
+	Username      string  `json:"username"`
+	PhoneNumber   string  `json:"phone_number"`
+	Email         string  `json:"email"`
+	Name          string  `json:"name"`
+	NameAlias     string  `json:"name_alias"`
+	Avatar        *string `json:"avatar"`
+	Gender        string  `json:"gender"`
+	BirthDate     string  `json:"birth_date"`
+	SlugName      string  `json:"slug_name"`
+	AboutMe       *string `json:"about_me"`
+	InstitutionID *string `json:"institution_id"`
+	JoinedAt      int64   `json:"joined_at"`
+	Linkedin      *string `json:"linkedin"`
 }
 
 type CompleteProfile struct {
@@ -54,15 +54,15 @@ type CompleteProfile struct {
 type UpdateProfile struct {
 	Name          string    `json:"name"`
 	NameAlias     string    `json:"name_alias"`
-	Avatar        string    `json:"avatar"`
+	Avatar        *string   `json:"avatar"`
 	Gender        string    `json:"gender"`
 	BirthDate     time.Time `json:"birth_date"`
 	SlugName      string    `json:"slug_name"`
-	AboutMe       string    `json:"about_me"`
+	AboutMe       *string   `json:"about_me"`
 	InstitutionID string    `json:"institution_id"`
 	UpdatedAt     int64     `json:"updated_at"`
 	UpdatedBy     string    `json:"updated_by"`
-	Linkedin      string    `json:"linkedin"`
+	Linkedin      *string   `json:"linkedin"`
 }
 
 type SecureUserProfile struct {
