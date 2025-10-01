@@ -3,7 +3,9 @@ package pgsql
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"prakarsa-app/domain"
+	"strings"
 )
 
 type pgsqlProfileRepository struct {
@@ -52,9 +54,92 @@ func (r *pgsqlProfileRepository) GetUserProfileByUserID(ctx context.Context, use
 }
 
 func (r *pgsqlProfileRepository) UpdateProfile(ctx context.Context, userID string, updateProfile *domain.UpdateProfile) (err error) {
-	query := "UPDATE profiles SET name = COALESCE(NULLIF($1, ''), name), name_alias = COALESCE(NULLIF($2, ''), name_alias), avatar = COALESCE(NULLIF($3, ''), avatar), gender = COALESCE(NULLIF($4, ''), gender), birth_date = COALESCE(NULLIF(TO_DATE($5, 'YYYY-MM-DD'), DATE '0001-01-01'), birth_date), slug_name = COALESCE(NULLIF($6, ''), slug_name), about_me = COALESCE(NULLIF($7, ''), about_me), institution_id = COALESCE(NULLIF($8, ''), institution_id), linkedin = COALESCE(NULLIF($9, ''), linkedin), updated_at = $10, updated_by = $11 WHERE user_id = $12"
-	_, err = r.db.ExecContext(ctx, query, updateProfile.Name, updateProfile.NameAlias, updateProfile.Avatar, updateProfile.Gender, updateProfile.BirthDate, updateProfile.SlugName, updateProfile.AboutMe, updateProfile.InstitutionID, updateProfile.Linkedin, updateProfile.UpdatedAt, updateProfile.UpdatedBy, userID)
-	return
+	sets := make([]string, 0, 12)
+	args := make([]any, 0, 12)
+	i := 1
+
+	setVal := func(col string, v any) {
+		sets = append(sets, fmt.Sprintf("%s = $%d", col, i))
+		args = append(args, v)
+		i++
+	}
+	setNull := func(col string) {
+		sets = append(sets, fmt.Sprintf("%s = ''", col))
+	}
+
+	// ---------- Name + Alias + Slug ----------
+	// Hanya update kalau Name dikirim (non-empty)
+	if updateProfile.Name != "" {
+		setVal("name", updateProfile.Name)
+		// Kamu sudah generate NameAlias & SlugName di usecase; tetap guard di sini
+		if updateProfile.NameAlias != "" {
+			setVal("name_alias", updateProfile.NameAlias)
+		}
+		if updateProfile.SlugName != "" {
+			setVal("slug_name", updateProfile.SlugName)
+		}
+	}
+
+	// ---------- Avatar ----------
+	// *updateProfile.Avatar: nil = no-change, "" = delete(NULL), non-empty = set
+	if updateProfile.Avatar != nil {
+		if *updateProfile.Avatar == "" {
+			setNull("avatar")
+		} else {
+			setVal("avatar", *updateProfile.Avatar)
+		}
+	}
+
+	// ---------- Gender ----------
+	if updateProfile.Gender != "" {
+		setVal("gender", updateProfile.Gender)
+	}
+
+	// ---------- Birth Date ----------
+	// Update kalau non-zero
+	if !updateProfile.BirthDate.IsZero() {
+		setVal("birth_date", updateProfile.BirthDate.UTC())
+	}
+
+	// ---------- About Me ----------
+	// *updateProfile.AboutMe: nil = no-change, "" = delete(NULL), non-empty = set
+	if updateProfile.AboutMe != nil {
+		if *updateProfile.AboutMe == "" {
+			setNull("about_me")
+		} else {
+			setVal("about_me", *updateProfile.AboutMe)
+		}
+	}
+
+	// ---------- Institution ----------
+	if updateProfile.InstitutionID != "" {
+		setVal("institution_id", updateProfile.InstitutionID)
+	}
+
+	// ---------- Linkedin ----------
+	// *updateProfile.Linkedin: nil = no-change, "" = delete(NULL), non-empty = set
+	if updateProfile.Linkedin != nil {
+		if *updateProfile.Linkedin == "" {
+			setNull("linkedin")
+		} else {
+			setVal("linkedin", *updateProfile.Linkedin)
+		}
+	}
+
+	// ---------- Audit ----------
+	setVal("updated_at", updateProfile.UpdatedAt)
+	setVal("updated_by", updateProfile.UpdatedBy)
+
+	if len(sets) == 0 {
+		// tidak ada perubahan
+		return nil
+	}
+
+	q := fmt.Sprintf(`UPDATE profiles SET %s WHERE user_id = $%d`, strings.Join(sets, ", "), i)
+	args = append(args, userID)
+
+	_, err = r.db.ExecContext(ctx, q, args...)
+	return err
 }
 
 func (r *pgsqlProfileRepository) GetUserProfileByPublicID(ctx context.Context, publicID string, userID string) (userProfile domain.SecureUserProfile, err error) {

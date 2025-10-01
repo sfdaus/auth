@@ -3,13 +3,14 @@ package usecase
 import (
 	"context"
 	"database/sql"
-	"github.com/google/uuid"
 	"prakarsa-app/config/constant"
 	"prakarsa-app/domain"
 	"prakarsa-app/infrastructure/filestorage"
 	"prakarsa-app/transport/request"
 	"prakarsa-app/utils"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type profileUsecase struct {
@@ -72,7 +73,7 @@ func (u *profileUsecase) ProfileCompletion(ctx context.Context, userID string) (
 
 	isComplete = false
 
-	if profile.BirthDate.IsZero() || profile.Gender == "" || profile.InstitutionID == "" {
+	if profile.BirthDate.IsZero() || profile.Gender == "" || profile.InstitutionID == nil {
 		isComplete = false
 	} else {
 		isComplete = true
@@ -94,9 +95,11 @@ func (u *profileUsecase) UserProfile(ctx context.Context, userID string) (domain
 		return domain.UserProfile{}, err
 	}
 
-	userProfile.Avatar, err = u.fileStorage.GetURL(ctx, userProfile.Avatar, time.Hour*24)
-	if err != nil {
-		return domain.UserProfile{}, err
+	if userProfile.Avatar != nil {
+		*userProfile.Avatar, err = u.fileStorage.GetURL(ctx, *userProfile.Avatar, time.Hour*24)
+		if err != nil {
+			return domain.UserProfile{}, err
+		}
 	}
 
 	return userProfile, nil
@@ -116,14 +119,13 @@ func (u *profileUsecase) UpdateProfile(ctx context.Context, userID string, reque
 	}
 
 	var birthDate time.Time
+	var empty = ""
 
 	updateProfilePayload := &domain.UpdateProfile{
 		Gender:        request.Gender,
-		AboutMe:       request.AboutMe,
 		InstitutionID: request.InstitutionID,
 		UpdatedAt:     time.Now().Unix(),
 		UpdatedBy:     profile.UserID,
-		Linkedin:      request.Linkedin,
 	}
 
 	if request.BirthDate != "" {
@@ -146,28 +148,48 @@ func (u *profileUsecase) UpdateProfile(ctx context.Context, userID string, reque
 	}
 	updateProfilePayload.SlugName = slugName
 	updateProfilePayload.NameAlias = nameAlias
-
 	avatarPath := profile.Avatar
-	if request.Avatar != nil {
+	if request.AvatarDelete != nil && utils.AsBool(request.AvatarDelete) {
+		avatarPath = &empty
+	} else if request.Avatar != nil {
 		fileAvatar, errFile := request.Avatar.Open()
 		if errFile != nil {
 			return errFile
 		}
 		defer fileAvatar.Close()
-
-		avatarPath, err = u.fileStorage.Put(ctx, "avatars/"+uuid.NewString(), fileAvatar)
+		tempAvatar, err := u.fileStorage.Put(ctx, "avatars/"+uuid.NewString(), fileAvatar)
+		avatarPath = &tempAvatar
 		if err != nil {
-			return
+			return err
 		}
 	}
 	updateProfilePayload.Avatar = avatarPath
+
+	if request.AboutMeDelete != nil && utils.AsBool(request.AboutMeDelete) {
+		updateProfilePayload.AboutMe = &empty
+	} else if request.AboutMe != "" {
+		updateProfilePayload.AboutMe = &request.AboutMe
+	}
+
+	if request.LinkedinDelete != nil && utils.AsBool(request.LinkedinDelete) {
+		updateProfilePayload.Linkedin = &empty
+	} else if request.Linkedin != "" {
+		updateProfilePayload.Linkedin = &request.Linkedin
+	}
 
 	err = u.profileRepo.UpdateProfile(ctx, userID, updateProfilePayload)
 
 	if err != nil {
 		return
 	}
-	return nil
+
+	if request.Avatar != nil || utils.AsBool(request.AvatarDelete) {
+		if profile.Avatar != nil {
+			_ = u.fileStorage.Delete(ctx, *profile.Avatar)
+		}
+	}
+
+	return
 }
 
 func (u *profileUsecase) UserProfileByID(ctx context.Context, request *request.UserProfileByIDReq) (userProfile domain.SecureUserProfile, err error) {

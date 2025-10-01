@@ -13,6 +13,7 @@ func (request CompleteProfileReq) Validate() error {
 		validation.Field(
 			&request.Gender,
 			validation.Required.Error("gender is required"),
+			validation.In("M", "F").Error("gender not valid (M/F)"),
 		),
 	)
 }

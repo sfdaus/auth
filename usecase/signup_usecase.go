@@ -81,16 +81,17 @@ func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (a
 
 	nameAlias := utils.GenerateNameAlias(request.Name)
 	// Create profile for the new user
+	var empty = ""
 	err = u.profileRepo.Create(ctx, &domain.Profile{
 		UserID:        newUserID,
 		Name:          request.Name,
 		NameAlias:     nameAlias,
-		Avatar:        "",
+		Avatar:        &empty,
 		Gender:        "",
 		BirthDate:     time.Time{},
 		SlugName:      utils.GenerateSlugName(request.Name),
-		AboutMe:       "",
-		InstitutionID: "",
+		AboutMe:       &empty,
+		InstitutionID: &empty,
 		IsActive:      true,
 		CreatedAt:     time.Now().Unix(),
 		CreatedBy:     "",
