@@ -7,3 +7,16 @@ type ForgotPasswordResponse struct {
 
 type ForgotPasswordResponseData struct {
 }
+
+type VerifyResetPasswordResponse struct {
+	BasicResponse
+	Data VerifyResetPasswordResponseData `json:"data,omitempty"`
+}
+
+type VerifyResetPasswordResponseData struct {
+	Valid bool `json:"valid"`
+}
+
+type ResetPayload struct {
+	UserID string `json:"user_id"`
+}

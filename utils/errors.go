@@ -39,6 +39,7 @@ var (
 
 	// Forgot Password specific errors
 	ErrForgotPasswordMissingEmail = errors.New("email must be provided")
+	ErrForgotPasswordMissingToken = errors.New("token must be provided")
 )
 
 // HttpErr interface

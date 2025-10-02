@@ -114,12 +114,18 @@ type ForgotPasswordResponseMessage struct {
 	ForgotPasswordUpdateTokenVersionFailed string
 	ForgotPasswordUserNotFound             string
 	ForgotPasswordEmailPasswordNotMatch    string
+	VerifyResetPasswordSuccess             string
+	VerifyResetPasswordFailed              string
+	VerifyResetPasswordTokenNotValid       string
 }
 
 var ForgotPasswordMessage = ForgotPasswordResponseMessage{
-	ForgotPasswordSuccess:      "Forgot password successful",
-	ForgotPasswordFailed:       "Forgot password failed",
-	ForgotPasswordUserNotFound: "User not found",
+	ForgotPasswordSuccess:            "Forgot password successful",
+	ForgotPasswordFailed:             "Forgot password failed",
+	ForgotPasswordUserNotFound:       "User not found",
+	VerifyResetPasswordSuccess:       "Verify reset password successful",
+	VerifyResetPasswordFailed:        "Verify reset password failed",
+	VerifyResetPasswordTokenNotValid: "Token not valid",
 }
 
 const (

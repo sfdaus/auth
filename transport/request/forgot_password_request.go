@@ -19,3 +19,16 @@ func (request ForgotPasswordReq) Validate() error {
 		),
 	)
 }
+
+type VerifyResetPasswordReq struct {
+	Token string `json:"token"`
+}
+
+func (request VerifyResetPasswordReq) Validate() error {
+	return validation.ValidateStruct(&request,
+		validation.Field(
+			&request.Token,
+			validation.Required.Error(utils.ErrForgotPasswordMissingToken.Error()),
+		),
+	)
+}

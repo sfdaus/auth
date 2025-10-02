@@ -9,6 +9,8 @@ import (
 	"prakarsa-app/domain"
 	"prakarsa-app/repository/redis"
 	"prakarsa-app/transport/request"
+	"prakarsa-app/transport/response"
+	"prakarsa-app/utils"
 	"prakarsa-app/utils/crypto"
 	"prakarsa-app/utils/jwt"
 	"time"
@@ -59,6 +61,45 @@ func (u *forgotpasswordUsecase) ForgotPassword(c context.Context, request *reque
 	}
 
 	fmt.Println(accessToken, jti)
+
+	return
+}
+
+func (u *forgotpasswordUsecase) VerifyResetPassword(c context.Context, request *request.VerifyResetPasswordReq) (valid bool, err error) {
+	ctx, cancel := context.WithTimeout(c, u.contextTimeout)
+	defer cancel()
+
+	// Decode JWT Token
+	claim, err := u.jwtSvc.ParseForgotPasswordToken(c, request.Token)
+	if err != nil {
+		return false, err
+	}
+
+	// Check redis
+	redisValue, err := u.redisRepo.Get(fmt.Sprintf("%s:token:%s", constant.FORGOT_PASSWORD_REDIS_KEY, claim.Id))
+	if err != nil {
+		return false, utils.NewNotFoundError(constant.ForgotPasswordMessage.VerifyResetPasswordTokenNotValid)
+	}
+
+	var p response.ResetPayload
+	if err := json.Unmarshal([]byte(redisValue), &p); err != nil {
+		return false, fmt.Errorf("unmarshal redis value: %w", err)
+	}
+
+	if p.UserID != claim.UserID {
+		return false, utils.NewUnauthorizedError("Token is not valid: User ID mismatch")
+	}
+
+	// Find user from token
+	_, err = u.userRepo.GetByUserID(ctx, claim.UserID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, utils.NewNotFoundError(constant.ForgotPasswordMessage.VerifyResetPasswordTokenNotValid)
+		}
+		return false, err
+	}
+
+	valid = true
 
 	return
 }

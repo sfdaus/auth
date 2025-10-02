@@ -66,3 +66,36 @@ func (s *jwtService) ValidateToken(ctx context.Context, tokenString string) (tok
 		return []byte(s.secretKey), nil
 	})
 }
+
+func (s *jwtService) ParseForgotPasswordToken(ctx context.Context, tokenStr string) (*forgotPasswordJWTCustomClaims, error) {
+	// Parse + verify signature
+	tkn, err := jwt.ParseWithClaims(tokenStr, &forgotPasswordJWTCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+		// pastikan algoritmanya sesuai (HS256)
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %T", token.Method)
+		}
+		return []byte(s.secretKey), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	claims, ok := tkn.Claims.(*forgotPasswordJWTCustomClaims)
+	if !ok || !tkn.Valid {
+		return nil, fmt.Errorf("invalid token")
+	}
+
+	// Validasi issuer & audience (defense-in-depth)
+	if claims.Issuer != s.issuer {
+		return nil, fmt.Errorf("invalid issuer")
+	}
+	if !claims.VerifyAudience("forgot_password", true) {
+		return nil, fmt.Errorf("invalid audience")
+	}
+
+	if !claims.VerifyExpiresAt(time.Now().Unix(), true) {
+		return nil, fmt.Errorf("token expired")
+	}
+
+	return claims, nil
+}

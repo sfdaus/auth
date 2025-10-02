@@ -40,6 +40,7 @@ func NewAuthHandler(e *echo.Echo, middleware *middleware.Middleware, signUpUC do
 	apiV1.PUT("/auth/update-profile", handler.UpdateProfile)
 	apiV1.GET("/auth/:public_id/user-profile", handler.UserProfileByID)
 	apiV1.POST("/auth/forgot-password", handler.ForgotPassword)
+	apiV1.POST("/auth/reset-password/verify", handler.VerifyResetPassword)
 }
 
 // SignUp godoc
@@ -388,6 +389,53 @@ func (h *AuthHandler) ForgotPassword(c echo.Context) (err error) {
 		BasicResponse: response.BasicResponse{
 			Status:  constant.Status.Success,
 			Message: constant.ForgotPasswordMessage.ForgotPasswordSuccess,
+		},
+	})
+}
+
+// VerifyResetPassword godoc
+// @Summary VerifyResetPassword
+// @Description VerifyResetPassword
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param forgot password body request.VerifyResetPasswordReq true "Forgot Password user"
+// @Success 200
+// @Router /api/v1/auth/forgot-password [post]
+func (h *AuthHandler) VerifyResetPassword(c echo.Context) (err error) {
+	ctx := c.Request().Context()
+	var req request.VerifyResetPasswordReq
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.ForgotPasswordMessage.VerifyResetPasswordFailed,
+			Error:   err.Error(),
+		})
+	}
+
+	if err := req.Validate(); err != nil {
+		errVal := err.(validation.Errors)
+		return c.JSON(http.StatusBadRequest, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.ForgotPasswordMessage.VerifyResetPasswordFailed,
+			Error:   errVal,
+		})
+	}
+
+	valid, err := h.ForgotPasswordUC.VerifyResetPassword(ctx, &req)
+
+	if err != nil {
+		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.ForgotPasswordMessage.VerifyResetPasswordFailed))
+	}
+
+	return c.JSON(http.StatusOK, response.VerifyResetPasswordResponse{
+		BasicResponse: response.BasicResponse{
+			Status:  constant.Status.Success,
+			Message: constant.ForgotPasswordMessage.VerifyResetPasswordSuccess,
+		},
+		Data: response.VerifyResetPasswordResponseData{
+			Valid: valid,
 		},
 	})
 }
