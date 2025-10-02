@@ -1,5 +1,7 @@
 package constant
 
+import "time"
+
 type ResponseStatus struct {
 	Success string
 	Failed  string
@@ -105,3 +107,23 @@ var UpdateProfileMessage = UpdateProfileResponseMessage{
 	UpdateProfileFailed:       "Update profile failed",
 	UpdateProfileUserNotFound: "User not found",
 }
+
+type ForgotPasswordResponseMessage struct {
+	ForgotPasswordSuccess                  string
+	ForgotPasswordFailed                   string
+	ForgotPasswordUpdateTokenVersionFailed string
+	ForgotPasswordUserNotFound             string
+	ForgotPasswordEmailPasswordNotMatch    string
+}
+
+var ForgotPasswordMessage = ForgotPasswordResponseMessage{
+	ForgotPasswordSuccess:      "Forgot password successful",
+	ForgotPasswordFailed:       "Forgot password failed",
+	ForgotPasswordUserNotFound: "User not found",
+}
+
+const (
+	FORGOT_PASSWORD_REDIS_KEY = "forgot-password"
+
+	FORGOT_PASSWORD_EXPIRES = time.Minute * 10
+)

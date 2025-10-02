@@ -31,6 +31,10 @@ type SignInUsecase interface {
 	SignIn(ctx context.Context, request *request.SignInReq) (accessToken string, userID string, err error)
 }
 
+type ForgotPassword interface {
+	ForgotPassword(ctx context.Context, request *request.ForgotPasswordReq) (err error)
+}
+
 // UserRepository represent the users repository contract
 type UserRepository interface {
 	Create(ctx context.Context, user *User) error

@@ -15,17 +15,20 @@ import (
 )
 
 type AuthHandler struct {
-	SignUpUC  domain.SignUpUsecase
-	SignInUC  domain.SignInUsecase
-	ProfileUC domain.ProfileUsecase
+	SignUpUC         domain.SignUpUsecase
+	SignInUC         domain.SignInUsecase
+	ProfileUC        domain.ProfileUsecase
+	ForgotPasswordUC domain.ForgotPassword
 }
 
 // NewAuthHandler will initialize the auth resources endpoint
-func NewAuthHandler(e *echo.Echo, middleware *middleware.Middleware, signUpUC domain.SignUpUsecase, signInUC domain.SignInUsecase, profileUC domain.ProfileUsecase) {
+func NewAuthHandler(e *echo.Echo, middleware *middleware.Middleware, signUpUC domain.SignUpUsecase, signInUC domain.SignInUsecase,
+	profileUC domain.ProfileUsecase, forgotPasswordUC domain.ForgotPassword) {
 	handler := &AuthHandler{
-		SignUpUC:  signUpUC,
-		SignInUC:  signInUC,
-		ProfileUC: profileUC,
+		SignUpUC:         signUpUC,
+		SignInUC:         signInUC,
+		ProfileUC:        profileUC,
+		ForgotPasswordUC: forgotPasswordUC,
 	}
 
 	apiV1 := e.Group("/api/v1")
@@ -36,6 +39,7 @@ func NewAuthHandler(e *echo.Echo, middleware *middleware.Middleware, signUpUC do
 	apiV1.GET("/auth/user-profile", handler.UserProfile)
 	apiV1.PUT("/auth/update-profile", handler.UpdateProfile)
 	apiV1.GET("/auth/:public_id/user-profile", handler.UserProfileByID)
+	apiV1.POST("/auth/forgot-password", handler.ForgotPassword)
 }
 
 // SignUp godoc
@@ -341,5 +345,49 @@ func (h *AuthHandler) UserProfileByID(c echo.Context) error {
 			Message: constant.UserProfileMessage.UserProfileSuccess,
 		},
 		Data: userProfile,
+	})
+}
+
+// ForgotPassword godoc
+// @Summary ForgotPassword
+// @Description ForgotPassword
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param forgot password body request.ForgotPasswordReq true "Forgot Password user"
+// @Success 202
+// @Router /api/v1/auth/forgot-password [post]
+func (h *AuthHandler) ForgotPassword(c echo.Context) (err error) {
+	ctx := c.Request().Context()
+	var req request.ForgotPasswordReq
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.ForgotPasswordMessage.ForgotPasswordFailed,
+			Error:   err.Error(),
+		})
+	}
+
+	if err := req.Validate(); err != nil {
+		errVal := err.(validation.Errors)
+		return c.JSON(http.StatusBadRequest, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.ForgotPasswordMessage.ForgotPasswordFailed,
+			Error:   errVal,
+		})
+	}
+
+	err = h.ForgotPasswordUC.ForgotPassword(ctx, &req)
+
+	if err != nil {
+		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.ForgotPasswordMessage.ForgotPasswordFailed))
+	}
+
+	return c.JSON(http.StatusAccepted, response.ForgotPasswordResponse{
+		BasicResponse: response.BasicResponse{
+			Status:  constant.Status.Success,
+			Message: constant.ForgotPasswordMessage.ForgotPasswordSuccess,
+		},
 	})
 }

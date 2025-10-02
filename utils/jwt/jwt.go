@@ -3,6 +3,8 @@ package jwt
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
+	"prakarsa-app/config/constant"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -28,6 +30,25 @@ func (s *jwtService) GenerateToken(ctx context.Context, userID string, tokenVers
 			ExpiresAt: time.Now().Add(time.Hour * 72).Unix(),
 			Issuer:    s.issuer,
 			IssuedAt:  time.Now().Unix(),
+		},
+	}
+
+	t := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	token, err = t.SignedString([]byte(s.secretKey))
+	return
+}
+
+func (s *jwtService) GenerateForgotPasswordToken(ctx context.Context, userID string) (token string, jti string, err error) {
+	jti = uuid.NewString()
+	claims := &forgotPasswordJWTCustomClaims{
+		userID,
+		jwt.StandardClaims{
+			Id:        jti,
+			ExpiresAt: time.Now().Add(constant.FORGOT_PASSWORD_EXPIRES).Unix(),
+			Issuer:    s.issuer,
+			IssuedAt:  time.Now().Unix(),
+			Audience:  "forgot_password",
 		},
 	}
 
