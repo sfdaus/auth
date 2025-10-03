@@ -7,3 +7,8 @@ type jwtCustomClaims struct {
 	TokenVersion string `json:"token_version"`
 	jwt.StandardClaims
 }
+
+type forgotPasswordJWTCustomClaims struct {
+	UserID string `json:"user_id"`
+	jwt.StandardClaims
+}

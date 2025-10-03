@@ -46,3 +46,15 @@ func (r *pgsqlUserRepository) GetByPhoneNumber(ctx context.Context, phoneNumber 
 	err = r.db.QueryRowContext(ctx, query, phoneNumber).Scan(&user.ID, &user.PhoneNumber, &user.Password, &user.IsActive, &user.DeletedAt)
 	return
 }
+
+func (r *pgsqlUserRepository) GetByUserID(ctx context.Context, userID string) (user domain.User, err error) {
+	query := "SELECT id, email, password, is_active, deleted_at FROM users WHERE id = $1"
+	err = r.db.QueryRowContext(ctx, query, userID).Scan(&user.ID, &user.Email, &user.Password, &user.IsActive, &user.DeletedAt)
+	return
+}
+
+func (r *pgsqlUserRepository) UpdatePasswordByUserID(ctx context.Context, userID string, newPassword string) (err error) {
+	query := "UPDATE users SET password = $1 WHERE id = $2 and is_active = true"
+	_, err = r.db.ExecContext(ctx, query, newPassword, userID)
+	return
+}
