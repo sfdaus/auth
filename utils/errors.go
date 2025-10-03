@@ -36,6 +36,10 @@ var (
 
 	// SignUp specific errors
 	ErrSignUpMissingEmailOrPhone = errors.New("either email or phone number must be provided")
+
+	// Forgot Password specific errors
+	ErrForgotPasswordMissingEmail = errors.New("email must be provided")
+	ErrForgotPasswordMissingToken = errors.New("token must be provided")
 )
 
 // HttpErr interface

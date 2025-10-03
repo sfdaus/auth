@@ -15,17 +15,20 @@ import (
 )
 
 type AuthHandler struct {
-	SignUpUC  domain.SignUpUsecase
-	SignInUC  domain.SignInUsecase
-	ProfileUC domain.ProfileUsecase
+	SignUpUC         domain.SignUpUsecase
+	SignInUC         domain.SignInUsecase
+	ProfileUC        domain.ProfileUsecase
+	ForgotPasswordUC domain.ForgotPassword
 }
 
 // NewAuthHandler will initialize the auth resources endpoint
-func NewAuthHandler(e *echo.Echo, middleware *middleware.Middleware, signUpUC domain.SignUpUsecase, signInUC domain.SignInUsecase, profileUC domain.ProfileUsecase) {
+func NewAuthHandler(e *echo.Echo, middleware *middleware.Middleware, signUpUC domain.SignUpUsecase, signInUC domain.SignInUsecase,
+	profileUC domain.ProfileUsecase, forgotPasswordUC domain.ForgotPassword) {
 	handler := &AuthHandler{
-		SignUpUC:  signUpUC,
-		SignInUC:  signInUC,
-		ProfileUC: profileUC,
+		SignUpUC:         signUpUC,
+		SignInUC:         signInUC,
+		ProfileUC:        profileUC,
+		ForgotPasswordUC: forgotPasswordUC,
 	}
 
 	apiV1 := e.Group("/api/v1")
@@ -36,6 +39,10 @@ func NewAuthHandler(e *echo.Echo, middleware *middleware.Middleware, signUpUC do
 	apiV1.GET("/auth/user-profile", handler.UserProfile)
 	apiV1.PUT("/auth/update-profile", handler.UpdateProfile)
 	apiV1.GET("/auth/:public_id/user-profile", handler.UserProfileByID)
+	apiV1.POST("/auth/forgot-password", handler.ForgotPassword)
+	apiV1.POST("/auth/reset-password/verify", handler.VerifyResetPassword)
+	apiV1.POST("/auth/reset-password", handler.ResetPassword)
+	apiV1.POST("/auth/verify-account", handler.VerifyAccount)
 }
 
 // SignUp godoc
@@ -69,6 +76,53 @@ func (h *AuthHandler) SignUp(c echo.Context) error {
 	}
 
 	accessToken, userID, err := h.SignUpUC.SignUp(ctx, &req)
+	if err != nil {
+		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.SignupMessage.SignupFailed))
+	}
+
+	return c.JSON(http.StatusOK, response.SignUpResponse{
+		BasicResponse: response.BasicResponse{
+			Status:  constant.Status.Success,
+			Message: constant.SignupMessage.SignupSuccess,
+		},
+		Data: response.SignUpResponseData{
+			UserID:      userID,
+			AccessToken: accessToken,
+		},
+	})
+}
+
+// Verify Account godoc
+// @Summary Verify Account
+// @Description Verify Account
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param token body request.VerifyAccountReq true "Verify account"
+// @Success 200
+// @Router /api/v1/auth/verify-account [post]
+func (h *AuthHandler) VerifyAccount(c echo.Context) error {
+	ctx := c.Request().Context()
+	var req request.VerifyAccountReq
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.SignupMessage.SignupFailed,
+			Error:   err.Error(),
+		})
+	}
+
+	if err := req.Validate(); err != nil {
+		errVal := err.(validation.Errors)
+		return c.JSON(http.StatusBadRequest, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.SignupMessage.SignupFailed,
+			Error:   errVal,
+		})
+	}
+
+	accessToken, userID, err := h.SignUpUC.VerifyAccount(ctx, &req)
 	if err != nil {
 		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.SignupMessage.SignupFailed))
 	}
@@ -341,5 +395,140 @@ func (h *AuthHandler) UserProfileByID(c echo.Context) error {
 			Message: constant.UserProfileMessage.UserProfileSuccess,
 		},
 		Data: userProfile,
+	})
+}
+
+// ForgotPassword godoc
+// @Summary ForgotPassword
+// @Description ForgotPassword
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param forgot_password body request.ForgotPasswordReq true "Forgot Password user"
+// @Success 202
+// @Router /api/v1/auth/forgot-password [post]
+func (h *AuthHandler) ForgotPassword(c echo.Context) (err error) {
+	ctx := c.Request().Context()
+	var req request.ForgotPasswordReq
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.ForgotPasswordMessage.ForgotPasswordFailed,
+			Error:   err.Error(),
+		})
+	}
+
+	if err := req.Validate(); err != nil {
+		errVal := err.(validation.Errors)
+		return c.JSON(http.StatusBadRequest, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.ForgotPasswordMessage.ForgotPasswordFailed,
+			Error:   errVal,
+		})
+	}
+
+	err = h.ForgotPasswordUC.ForgotPassword(ctx, &req)
+
+	if err != nil {
+		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.ForgotPasswordMessage.ForgotPasswordFailed))
+	}
+
+	return c.JSON(http.StatusAccepted, response.ForgotPasswordResponse{
+		BasicResponse: response.BasicResponse{
+			Status:  constant.Status.Success,
+			Message: constant.ForgotPasswordMessage.ForgotPasswordSuccess,
+		},
+	})
+}
+
+// VerifyResetPassword godoc
+// @Summary VerifyResetPassword
+// @Description VerifyResetPassword
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param verify_reset_password body request.VerifyResetPasswordReq true "Verify Reset Password user"
+// @Success 200
+// @Router /api/v1/auth/reset-password/verify [post]
+func (h *AuthHandler) VerifyResetPassword(c echo.Context) (err error) {
+	ctx := c.Request().Context()
+	var req request.VerifyResetPasswordReq
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.ForgotPasswordMessage.VerifyResetPasswordFailed,
+			Error:   err.Error(),
+		})
+	}
+
+	if err := req.Validate(); err != nil {
+		errVal := err.(validation.Errors)
+		return c.JSON(http.StatusBadRequest, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.ForgotPasswordMessage.VerifyResetPasswordFailed,
+			Error:   errVal,
+		})
+	}
+
+	valid, err := h.ForgotPasswordUC.VerifyResetPassword(ctx, &req)
+
+	if err != nil {
+		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.ForgotPasswordMessage.VerifyResetPasswordFailed))
+	}
+
+	return c.JSON(http.StatusOK, response.VerifyResetPasswordResponse{
+		BasicResponse: response.BasicResponse{
+			Status:  constant.Status.Success,
+			Message: constant.ForgotPasswordMessage.VerifyResetPasswordSuccess,
+		},
+		Data: response.VerifyResetPasswordResponseData{
+			Valid: valid,
+		},
+	})
+}
+
+// ResetPassword godoc
+// @Summary ResetPassword
+// @Description ResetPassword
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param reset_password body request.ResetPasswordReq true "Reset Password user"
+// @Success 200
+// @Router /api/v1/auth/reset-password [post]
+func (h *AuthHandler) ResetPassword(c echo.Context) (err error) {
+	ctx := c.Request().Context()
+	var req request.ResetPasswordReq
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.ForgotPasswordMessage.ResetPasswordFailed,
+			Error:   err.Error(),
+		})
+	}
+
+	if err := req.Validate(); err != nil {
+		errVal := err.(validation.Errors)
+		return c.JSON(http.StatusBadRequest, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.ForgotPasswordMessage.ResetPasswordFailed,
+			Error:   errVal,
+		})
+	}
+
+	err = h.ForgotPasswordUC.ResetPassword(ctx, &req)
+
+	if err != nil {
+		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.ForgotPasswordMessage.ResetPasswordFailed))
+	}
+
+	return c.JSON(http.StatusOK, response.ResetPasswordResponse{
+		BasicResponse: response.BasicResponse{
+			Status:  constant.Status.Success,
+			Message: constant.ForgotPasswordMessage.ResetPasswordSuccess,
+		},
 	})
 }

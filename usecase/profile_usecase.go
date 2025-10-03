@@ -95,6 +95,11 @@ func (u *profileUsecase) UserProfile(ctx context.Context, userID string) (domain
 		return domain.UserProfile{}, err
 	}
 
+	userProfile.Email, err = utils.DecryptDeterministic(userProfile.Email)
+	if err != nil {
+		return domain.UserProfile{}, err
+	}
+
 	if userProfile.Avatar != nil {
 		*userProfile.Avatar, err = u.fileStorage.GetURL(ctx, *userProfile.Avatar, time.Hour*24)
 		if err != nil {

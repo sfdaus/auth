@@ -3,10 +3,13 @@ package usecase
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
+	"prakarsa-app/config"
 	"prakarsa-app/config/constant"
 	"prakarsa-app/domain"
+	service "prakarsa-app/service/mail"
 	"prakarsa-app/transport/request"
 	"prakarsa-app/utils"
 	"prakarsa-app/utils/crypto"
@@ -20,9 +23,10 @@ type signupUsecase struct {
 	cryptoSvc      crypto.CryptoService
 	jwtSvc         jwt.JWTService
 	contextTimeout time.Duration
+	emailService   service.EmailService
 }
 
-func SignUpUsecase(userRepo domain.UserRepository, authTokenRepo domain.AuthTokenRepository, profileRepo domain.ProfileRepository, cryptoSvc crypto.CryptoService, jwtSvc jwt.JWTService, contextTimeout time.Duration) *signupUsecase {
+func SignUpUsecase(userRepo domain.UserRepository, authTokenRepo domain.AuthTokenRepository, profileRepo domain.ProfileRepository, cryptoSvc crypto.CryptoService, jwtSvc jwt.JWTService, contextTimeout time.Duration, emailService service.EmailService) *signupUsecase {
 	return &signupUsecase{
 		userRepo:       userRepo,
 		authTokenRepo:  authTokenRepo,
@@ -30,6 +34,7 @@ func SignUpUsecase(userRepo domain.UserRepository, authTokenRepo domain.AuthToke
 		cryptoSvc:      cryptoSvc,
 		jwtSvc:         jwtSvc,
 		contextTimeout: contextTimeout,
+		emailService:   emailService,
 	}
 }
 
@@ -37,7 +42,13 @@ func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (a
 	ctx, cancel := context.WithTimeout(c, u.contextTimeout)
 	defer cancel()
 
-	user, err := u.userRepo.GetByEmail(ctx, request.Email)
+	encryptedMail, err := utils.EncryptDeterministic(request.Email)
+	if err != nil {
+		err = utils.NewBadRequestError(constant.SignupMessage.SignupFailedEncryptEmail)
+		return
+	}
+
+	user, err := u.userRepo.GetByEmail(ctx, encryptedMail)
 	if err != nil && err != sql.ErrNoRows {
 		return
 	}
@@ -58,7 +69,7 @@ func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (a
 	// Create new user
 	err = u.userRepo.Create(ctx, &domain.User{
 		ID:           newUserID,
-		Email:        request.Email,
+		Email:        encryptedMail,
 		PhoneNumber:  "",
 		Username:     "",
 		TokenVersion: tokenVersion,
@@ -69,6 +80,7 @@ func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (a
 		UpdatedAt:    0,
 		UpdatedBy:    "",
 		DeletedAt:    0,
+		IsVerified:   false,
 	})
 	if err != nil {
 		errorInfo := utils.ErrorInfo{
@@ -135,6 +147,48 @@ func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (a
 	userID = newUserID
 	// Generate JWT token for the new user
 	accessToken, err = u.jwtSvc.GenerateToken(ctx, newUserID, tokenVersion)
+	if err != nil {
+		err = utils.NewBadRequestError(constant.SignupMessage.SignupFailedToGenerateToken)
+		return
+	}
+
+	verificationToken, err := jwt.GenerateShortJWT(userID)
+	htmlBody, err := utils.RenderTemplate("templates/verify_email.html", map[string]interface{}{
+		"Name":      request.Name,
+		"VerifyURL": fmt.Sprintf("%s/%s/%s", config.LoadConfig().BaseURLApp, "api/v1/auth/verify-account", verificationToken),
+	})
+	if err != nil {
+		err = utils.NewBadRequestError("Err")
+		return
+	}
+	err = u.emailService.SendEmail(
+		ctx,
+		request.Email,
+		"Verifikasi Email",
+		htmlBody,
+	)
+	if err != nil {
+		err = utils.NewBadRequestError(constant.SignupMessage.SignupFailedToSendEmail)
+	}
+
+	return
+}
+
+func (u *signupUsecase) VerifyAccount(c context.Context, request *request.VerifyAccountReq) (accessToken string, userId string, err error) {
+	ctx, cancel := context.WithTimeout(c, u.contextTimeout)
+	defer cancel()
+
+	userId, err = jwt.ValidateShortJWT(request.Token)
+	if err != nil {
+		return
+	}
+	err = u.userRepo.VerifyAccountByUserID(ctx, userId)
+	if err != nil && err != sql.ErrNoRows {
+		return
+	}
+
+	tokenVersion := utils.GenerateTokenVersion()
+	accessToken, err = u.jwtSvc.GenerateToken(ctx, userId, tokenVersion)
 	if err != nil {
 		err = utils.NewBadRequestError(constant.SignupMessage.SignupFailedToGenerateToken)
 		return

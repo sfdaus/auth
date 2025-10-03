@@ -19,7 +19,10 @@ import (
 	"prakarsa-app/infrastructure/datastore"
 	filestorage "prakarsa-app/infrastructure/filestorage"
 	pgsqlRepository "prakarsa-app/repository/pgsql"
+	redisRepository "prakarsa-app/repository/redis"
 	"prakarsa-app/usecase"
+
+	mail "prakarsa-app/service/mail"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -41,11 +44,11 @@ func main() {
 	fileStorageInstance, err := filestorage.NewFileStorage(configApp)
 	utils.PanicIfNeeded(err)
 
-	// cacheInstance, err := datastore.NewCache(configApp.CacheURL)
+	cacheInstance, err := datastore.NewCache(configApp.CacheURL)
 	utils.PanicIfNeeded(err)
 
 	// Setup repository
-	// redisRepo := redisRepository.NewRedisRepository(cacheInstance)
+	redisRepo := redisRepository.NewRedisRepository(cacheInstance)
 	userRepo := pgsqlRepository.NewPgsqlUserRepository(dbInstance)
 	authTokenRepo := pgsqlRepository.NewPgsqlAuthTokenRepository(dbInstance)
 	profileRepo := pgsqlRepository.NewPgsqlProfileRepository(dbInstance)
@@ -53,12 +56,14 @@ func main() {
 	// Setup Service
 	cryptoSvc := crypto.NewCryptoService()
 	jwtSvc := jwt.NewJWTService(configApp.JWTSecretKey)
+	emailSvc := mail.NewResendEmailService(configApp.ResendAPIKey, configApp.ResendFrom)
 
 	// Setup usecase
 	ctxTimeout := time.Duration(configApp.ContextTimeout) * time.Second
-	signUpUC := usecase.SignUpUsecase(userRepo, authTokenRepo, profileRepo, cryptoSvc, jwtSvc, ctxTimeout)
+	signUpUC := usecase.SignUpUsecase(userRepo, authTokenRepo, profileRepo, cryptoSvc, jwtSvc, ctxTimeout, emailSvc)
 	signInUC := usecase.SignInUsecase(userRepo, cryptoSvc, jwtSvc, ctxTimeout)
 	profileUC := usecase.ProfileUsecase(profileRepo, ctxTimeout, fileStorageInstance)
+	forgotPasswordUC := usecase.ForgotPasswordUsecase(userRepo, profileRepo, redisRepo, cryptoSvc, jwtSvc, ctxTimeout, emailSvc)
 
 	// Setup app middleware
 	appMiddleware := appMiddleware.NewMiddleware(jwtSvc)
@@ -76,7 +81,9 @@ func main() {
 		return c.NoContent(http.StatusOK)
 	})
 
-	httpDelivery.NewAuthHandler(e, appMiddleware, signUpUC, signInUC, profileUC)
+	httpDelivery.NewAuthHandler(e, appMiddleware, signUpUC, signInUC, profileUC, forgotPasswordUC)
+
+	e.Static("/templates", "templates")
 
 	// Start server
 	go func() {
