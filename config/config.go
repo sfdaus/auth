@@ -10,6 +10,7 @@ import (
 
 type Config struct {
 	BaseURL                string
+	BaseURLApp             string
 	PublicURL              string
 	DatabaseURL            string
 	CacheURL               string
@@ -39,6 +40,7 @@ func LoadConfig() *Config {
 
 	cfg := &Config{
 		BaseURL:                mustGetEnv("BASE_URL"),
+		BaseURLApp:             mustGetEnv("BASE_URL_APP"),
 		PublicURL:              mustGetEnv("PUBLIC_URL"),
 		DatabaseURL:            mustGetEnv("DATABASE_URL"),
 		CacheURL:               getEnv("CACHE_URL", ""),
