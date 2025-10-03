@@ -16,6 +16,35 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/v1/auth/:id/user-profile": {
+            "get": {
+                "description": "UserProfileByID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "UserProfileByID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID from Gateway",
+                        "name": "x-user-id",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/api/v1/auth/complete-profile": {
             "post": {
                 "description": "CompleteProfile",
@@ -54,6 +83,37 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/auth/forgot-password": {
+            "post": {
+                "description": "ForgotPassword",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "ForgotPassword",
+                "parameters": [
+                    {
+                        "description": "Forgot Password user",
+                        "name": "forgot_password",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ForgotPasswordReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted"
+                    }
+                }
+            }
+        },
         "/api/v1/auth/profile-completion": {
             "get": {
                 "description": "ProfileCompletion",
@@ -74,6 +134,68 @@ const docTemplate = `{
                         "name": "x-user-id",
                         "in": "header",
                         "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/reset-password": {
+            "post": {
+                "description": "ResetPassword",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "ResetPassword",
+                "parameters": [
+                    {
+                        "description": "Reset Password user",
+                        "name": "reset_password",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ResetPasswordReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/reset-password/verify": {
+            "post": {
+                "description": "VerifyResetPassword",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "VerifyResetPassword",
+                "parameters": [
+                    {
+                        "description": "Verify Reset Password user",
+                        "name": "verify_reset_password",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.VerifyResetPasswordReq"
+                        }
                     }
                 ],
                 "responses": {
@@ -250,6 +372,37 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/v1/auth/verify-account": {
+            "post": {
+                "description": "Verify Account",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Verify Account",
+                "parameters": [
+                    {
+                        "description": "Verify account",
+                        "name": "token",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.VerifyAccountReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -263,6 +416,28 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "institution_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.ForgotPasswordReq": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.ResetPasswordReq": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "verify_password": {
                     "type": "string"
                 }
             }
@@ -294,6 +469,22 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.VerifyAccountReq": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.VerifyResetPasswordReq": {
+            "type": "object",
+            "properties": {
+                "token": {
                     "type": "string"
                 }
             }

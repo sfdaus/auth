@@ -21,10 +21,12 @@ type User struct {
 	UpdatedAt    int64  `json:"updated_at"`
 	UpdatedBy    string `json:"updated_by"`
 	DeletedAt    int64  `json:"deleted_at"`
+	IsVerified   bool   `json:"is_verified"`
 }
 
 type SignUpUsecase interface {
 	SignUp(ctx context.Context, request *request.SignUpReq) (accessToken string, userID string, err error)
+	VerifyAccount(ctx context.Context, request *request.VerifyAccountReq) (accessToken string, userID string, err error)
 }
 
 type SignInUsecase interface {
@@ -46,4 +48,5 @@ type UserRepository interface {
 	GetByPhoneNumber(ctx context.Context, phoneNumber string) (User, error)
 	GetByUserID(ctx context.Context, userID string) (User, error)
 	UpdatePasswordByUserID(ctx context.Context, userID string, newPassword string) error
+	VerifyAccountByUserID(ctx context.Context, userID string) error
 }

@@ -42,6 +42,7 @@ func NewAuthHandler(e *echo.Echo, middleware *middleware.Middleware, signUpUC do
 	apiV1.POST("/auth/forgot-password", handler.ForgotPassword)
 	apiV1.POST("/auth/reset-password/verify", handler.VerifyResetPassword)
 	apiV1.POST("/auth/reset-password", handler.ResetPassword)
+	apiV1.POST("/auth/verify-account/:token", handler.VerifyAccount)
 }
 
 // SignUp godoc
@@ -75,6 +76,53 @@ func (h *AuthHandler) SignUp(c echo.Context) error {
 	}
 
 	accessToken, userID, err := h.SignUpUC.SignUp(ctx, &req)
+	if err != nil {
+		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.SignupMessage.SignupFailed))
+	}
+
+	return c.JSON(http.StatusOK, response.SignUpResponse{
+		BasicResponse: response.BasicResponse{
+			Status:  constant.Status.Success,
+			Message: constant.SignupMessage.SignupSuccess,
+		},
+		Data: response.SignUpResponseData{
+			UserID:      userID,
+			AccessToken: accessToken,
+		},
+	})
+}
+
+// Verify Account godoc
+// @Summary Verify Account
+// @Description Verify Account
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param token body request.VerifyAccountReq true "Verify account"
+// @Success 200
+// @Router /api/v1/auth/verify-account [post]
+func (h *AuthHandler) VerifyAccount(c echo.Context) error {
+	ctx := c.Request().Context()
+	var req request.VerifyAccountReq
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.SignupMessage.SignupFailed,
+			Error:   err.Error(),
+		})
+	}
+
+	if err := req.Validate(); err != nil {
+		errVal := err.(validation.Errors)
+		return c.JSON(http.StatusBadRequest, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.SignupMessage.SignupFailed,
+			Error:   errVal,
+		})
+	}
+
+	accessToken, userID, err := h.SignUpUC.VerifyAccount(ctx, &req)
 	if err != nil {
 		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.SignupMessage.SignupFailed))
 	}
@@ -356,7 +404,7 @@ func (h *AuthHandler) UserProfileByID(c echo.Context) error {
 // @Tags Auth
 // @Accept json
 // @Produce json
-// @Param forgot password body request.ForgotPasswordReq true "Forgot Password user"
+// @Param forgot_password body request.ForgotPasswordReq true "Forgot Password user"
 // @Success 202
 // @Router /api/v1/auth/forgot-password [post]
 func (h *AuthHandler) ForgotPassword(c echo.Context) (err error) {
@@ -400,7 +448,7 @@ func (h *AuthHandler) ForgotPassword(c echo.Context) (err error) {
 // @Tags Auth
 // @Accept json
 // @Produce json
-// @Param Verify reset password body request.VerifyResetPasswordReq true "Verify Reset Password user"
+// @Param verify_reset_password body request.VerifyResetPasswordReq true "Verify Reset Password user"
 // @Success 200
 // @Router /api/v1/auth/reset-password/verify [post]
 func (h *AuthHandler) VerifyResetPassword(c echo.Context) (err error) {
@@ -447,7 +495,7 @@ func (h *AuthHandler) VerifyResetPassword(c echo.Context) (err error) {
 // @Tags Auth
 // @Accept json
 // @Produce json
-// @Param reset password body request.ResetPasswordReq true "Reset Password user"
+// @Param reset_password body request.ResetPasswordReq true "Reset Password user"
 // @Success 200
 // @Router /api/v1/auth/reset-password [post]
 func (h *AuthHandler) ResetPassword(c echo.Context) (err error) {

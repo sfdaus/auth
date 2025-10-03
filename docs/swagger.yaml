@@ -8,6 +8,20 @@ definitions:
       institution_id:
         type: string
     type: object
+  request.ForgotPasswordReq:
+    properties:
+      email:
+        type: string
+    type: object
+  request.ResetPasswordReq:
+    properties:
+      password:
+        type: string
+      token:
+        type: string
+      verify_password:
+        type: string
+    type: object
   request.SignInReq:
     properties:
       email:
@@ -28,12 +42,41 @@ definitions:
       password:
         type: string
     type: object
+  request.VerifyAccountReq:
+    properties:
+      token:
+        type: string
+    type: object
+  request.VerifyResetPasswordReq:
+    properties:
+      token:
+        type: string
+    type: object
 info:
   contact: {}
   termsOfService: http://swagger.io/terms/
   title: Auth API
   version: 1.0.4
 paths:
+  /api/v1/auth/:id/user-profile:
+    get:
+      consumes:
+      - application/json
+      description: UserProfileByID
+      parameters:
+      - description: User ID from Gateway
+        in: header
+        name: x-user-id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: UserProfileByID
+      tags:
+      - Auth
   /api/v1/auth/complete-profile:
     post:
       consumes:
@@ -59,6 +102,26 @@ paths:
       summary: CompleteProfile
       tags:
       - Auth
+  /api/v1/auth/forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: ForgotPassword
+      parameters:
+      - description: Forgot Password user
+        in: body
+        name: forgot_password
+        required: true
+        schema:
+          $ref: '#/definitions/request.ForgotPasswordReq'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+      summary: ForgotPassword
+      tags:
+      - Auth
   /api/v1/auth/profile-completion:
     get:
       consumes:
@@ -76,6 +139,46 @@ paths:
         "200":
           description: OK
       summary: ProfileCompletion
+      tags:
+      - Auth
+  /api/v1/auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: ResetPassword
+      parameters:
+      - description: Reset Password user
+        in: body
+        name: reset_password
+        required: true
+        schema:
+          $ref: '#/definitions/request.ResetPasswordReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: ResetPassword
+      tags:
+      - Auth
+  /api/v1/auth/reset-password/verify:
+    post:
+      consumes:
+      - application/json
+      description: VerifyResetPassword
+      parameters:
+      - description: Verify Reset Password user
+        in: body
+        name: verify_reset_password
+        required: true
+        schema:
+          $ref: '#/definitions/request.VerifyResetPasswordReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: VerifyResetPassword
       tags:
       - Auth
   /api/v1/auth/signin:
@@ -186,6 +289,26 @@ paths:
         "200":
           description: OK
       summary: UserProfile
+      tags:
+      - Auth
+  /api/v1/auth/verify-account:
+    post:
+      consumes:
+      - application/json
+      description: Verify Account
+      parameters:
+      - description: Verify account
+        in: body
+        name: token
+        required: true
+        schema:
+          $ref: '#/definitions/request.VerifyAccountReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+      summary: Verify Account
       tags:
       - Auth
 securityDefinitions:

@@ -18,8 +18,8 @@ func NewPgsqlUserRepository(db *sql.DB) *pgsqlUserRepository {
 }
 
 func (r *pgsqlUserRepository) Create(ctx context.Context, user *domain.User) (err error) {
-	query := "INSERT INTO users (id, password, username, phone_number, email, token_version, is_active, created_at, created_by, updated_at, updated_by, deleted_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)"
-	_, err = r.db.ExecContext(ctx, query, user.ID, user.Password, user.Username, user.PhoneNumber, user.Email, user.TokenVersion, user.IsActive, user.CreatedAt, user.CreatedBy, user.UpdatedAt, user.UpdatedBy, user.DeletedAt)
+	query := "INSERT INTO users (id, password, username, phone_number, email, token_version, is_active, created_at, created_by, updated_at, updated_by, deleted_at, is_verified) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)"
+	_, err = r.db.ExecContext(ctx, query, user.ID, user.Password, user.Username, user.PhoneNumber, user.Email, user.TokenVersion, user.IsActive, user.CreatedAt, user.CreatedBy, user.UpdatedAt, user.UpdatedBy, user.DeletedAt, user.IsVerified)
 	return
 }
 
@@ -56,5 +56,11 @@ func (r *pgsqlUserRepository) GetByUserID(ctx context.Context, userID string) (u
 func (r *pgsqlUserRepository) UpdatePasswordByUserID(ctx context.Context, userID string, newPassword string) (err error) {
 	query := "UPDATE users SET password = $1 WHERE id = $2 and is_active = true"
 	_, err = r.db.ExecContext(ctx, query, newPassword, userID)
+	return
+}
+
+func (r *pgsqlUserRepository) VerifyAccountByUserID(ctx context.Context, userID string) (err error) {
+	query := "UPDATE users SET is_verified = true WHERE id = $1 and is_active = true"
+	_, err = r.db.ExecContext(ctx, query, userID)
 	return
 }

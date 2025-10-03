@@ -46,7 +46,7 @@ func (u *forgotpasswordUsecase) ForgotPassword(c context.Context, request *reque
 		return
 	}
 
-	accessToken, jti, err := u.jwtSvc.GenerateForgotPasswordToken(ctx, user.ID)
+	_, jti, err := u.jwtSvc.GenerateForgotPasswordToken(ctx, user.ID)
 
 	// Write on redis
 	b, _ := json.Marshal(map[string]string{
@@ -59,8 +59,6 @@ func (u *forgotpasswordUsecase) ForgotPassword(c context.Context, request *reque
 	if err != nil {
 		return
 	}
-
-	fmt.Println(accessToken, jti)
 
 	return
 }

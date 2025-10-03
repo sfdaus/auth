@@ -2,10 +2,13 @@ package jwt
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"github.com/google/uuid"
+	"prakarsa-app/config"
 	"prakarsa-app/config/constant"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/golang-jwt/jwt"
 )
@@ -65,6 +68,38 @@ func (s *jwtService) ValidateToken(ctx context.Context, tokenString string) (tok
 		}
 		return []byte(s.secretKey), nil
 	})
+}
+
+func GenerateShortJWT(userID string) (string, error) {
+	secret := []byte(config.LoadConfig().JWTSecretKey)
+	claims := jwt.MapClaims{
+		"sub": userID,
+		"exp": time.Now().Add(time.Duration(config.LoadConfig().AccountVerificationTtl) * time.Minute).Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(secret)
+}
+
+func ValidateShortJWT(tokenStr string) (userID string, err error) {
+	secret := []byte(config.LoadConfig().JWTSecretKey)
+	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		if token.Method != jwt.SigningMethodHS256 {
+			return nil, fmt.Errorf("unexpected signing method")
+		}
+		return secret, nil
+	})
+	if err != nil {
+		return "", err
+	}
+	if !token.Valid {
+		return "", errors.New("invalid token")
+	}
+	claims := token.Claims.(jwt.MapClaims)
+	sub, ok := claims["sub"].(string)
+	if !ok {
+		return "", errors.New("invalid sub")
+	}
+	return sub, nil
 }
 
 func (s *jwtService) ParseForgotPasswordToken(ctx context.Context, tokenStr string) (*forgotPasswordJWTCustomClaims, error) {
