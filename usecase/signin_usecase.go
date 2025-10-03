@@ -33,7 +33,8 @@ func (u *signinUsecase) SignIn(c context.Context, request *request.SignInReq) (a
 	ctx, cancel := context.WithTimeout(c, u.contextTimeout)
 	defer cancel()
 
-	user, err := u.userRepo.GetByEmail(ctx, request.Email)
+	encryptedMail, _ := utils.EncryptDeterministic(request.Email)
+	user, err := u.userRepo.GetByEmail(ctx, encryptedMail)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			err = utils.NewBadRequestError(constant.SigninMessage.SigninUserNotFound)
