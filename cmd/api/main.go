@@ -63,7 +63,7 @@ func main() {
 	signUpUC := usecase.SignUpUsecase(userRepo, authTokenRepo, profileRepo, cryptoSvc, jwtSvc, ctxTimeout, emailSvc)
 	signInUC := usecase.SignInUsecase(userRepo, cryptoSvc, jwtSvc, ctxTimeout)
 	profileUC := usecase.ProfileUsecase(profileRepo, ctxTimeout, fileStorageInstance)
-	forgotPasswordUC := usecase.ForgotPasswordUsecase(userRepo, redisRepo, cryptoSvc, jwtSvc, ctxTimeout)
+	forgotPasswordUC := usecase.ForgotPasswordUsecase(userRepo, profileRepo, redisRepo, cryptoSvc, jwtSvc, ctxTimeout, emailSvc)
 
 	// Setup app middleware
 	appMiddleware := appMiddleware.NewMiddleware(jwtSvc)

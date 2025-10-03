@@ -5,9 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"prakarsa-app/config"
 	"prakarsa-app/config/constant"
 	"prakarsa-app/domain"
 	"prakarsa-app/repository/redis"
+	service "prakarsa-app/service/mail"
 	"prakarsa-app/transport/request"
 	"prakarsa-app/transport/response"
 	"prakarsa-app/utils"
@@ -18,18 +20,23 @@ import (
 
 type forgotpasswordUsecase struct {
 	userRepo       domain.UserRepository
+	profileRepo    domain.ProfileRepository
 	redisRepo      redis.RedisRepository
 	cryptoSvc      crypto.CryptoService
 	jwtSvc         jwt.JWTService
 	contextTimeout time.Duration
+	emailService   service.EmailService
 }
 
-func ForgotPasswordUsecase(userRepo domain.UserRepository, redisRepo redis.RedisRepository, cryptoSvc crypto.CryptoService, jwtSvc jwt.JWTService, contextTimeout time.Duration) *forgotpasswordUsecase {
+func ForgotPasswordUsecase(userRepo domain.UserRepository, profileRepo domain.ProfileRepository, redisRepo redis.RedisRepository, cryptoSvc crypto.CryptoService,
+	jwtSvc jwt.JWTService, contextTimeout time.Duration, emailService service.EmailService) *forgotpasswordUsecase {
 	return &forgotpasswordUsecase{
 		userRepo:       userRepo,
+		profileRepo:    profileRepo,
 		redisRepo:      redisRepo,
 		cryptoSvc:      cryptoSvc,
 		jwtSvc:         jwtSvc,
+		emailService:   emailService,
 		contextTimeout: contextTimeout,
 	}
 }
@@ -46,7 +53,7 @@ func (u *forgotpasswordUsecase) ForgotPassword(c context.Context, request *reque
 		return
 	}
 
-	_, jti, err := u.jwtSvc.GenerateForgotPasswordToken(ctx, user.ID)
+	verificationToken, jti, err := u.jwtSvc.GenerateForgotPasswordToken(ctx, user.ID)
 
 	// Write on redis
 	b, _ := json.Marshal(map[string]string{
@@ -59,6 +66,32 @@ func (u *forgotpasswordUsecase) ForgotPassword(c context.Context, request *reque
 	if err != nil {
 		return
 	}
+
+	// Get user information
+	userInfo, err := u.profileRepo.GetUserProfileByUserID(ctx, user.ID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil
+		}
+		return
+	}
+
+	// Send Email
+	htmlBody, err := utils.RenderTemplate("templates/verify_forgot_password.html", map[string]interface{}{
+		"Name":      userInfo.Name,
+		"VerifyURL": fmt.Sprintf("%s/%s/%s", config.LoadConfig().BaseURLApp, "/forgot-password?token=", verificationToken),
+	})
+	if err != nil {
+		err = utils.NewInternalServerError("Failed to render email template")
+		return
+	}
+
+	_ = u.emailService.SendEmail(
+		ctx,
+		request.Email,
+		"Atur Ulang Kata Sandi",
+		htmlBody,
+	)
 
 	return
 }
