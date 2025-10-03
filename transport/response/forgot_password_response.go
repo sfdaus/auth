@@ -20,3 +20,11 @@ type VerifyResetPasswordResponseData struct {
 type ResetPayload struct {
 	UserID string `json:"user_id"`
 }
+
+type ResetPasswordResponse struct {
+	BasicResponse
+	Data ResetPasswordResponseData `json:"data,omitempty"`
+}
+
+type ResetPasswordResponseData struct {
+}

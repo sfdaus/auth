@@ -41,6 +41,7 @@ func NewAuthHandler(e *echo.Echo, middleware *middleware.Middleware, signUpUC do
 	apiV1.GET("/auth/:public_id/user-profile", handler.UserProfileByID)
 	apiV1.POST("/auth/forgot-password", handler.ForgotPassword)
 	apiV1.POST("/auth/reset-password/verify", handler.VerifyResetPassword)
+	apiV1.POST("/auth/reset-password", handler.ResetPassword)
 }
 
 // SignUp godoc
@@ -399,9 +400,9 @@ func (h *AuthHandler) ForgotPassword(c echo.Context) (err error) {
 // @Tags Auth
 // @Accept json
 // @Produce json
-// @Param forgot password body request.VerifyResetPasswordReq true "Forgot Password user"
+// @Param Verify reset password body request.VerifyResetPasswordReq true "Verify Reset Password user"
 // @Success 200
-// @Router /api/v1/auth/forgot-password [post]
+// @Router /api/v1/auth/reset-password/verify [post]
 func (h *AuthHandler) VerifyResetPassword(c echo.Context) (err error) {
 	ctx := c.Request().Context()
 	var req request.VerifyResetPasswordReq
@@ -436,6 +437,50 @@ func (h *AuthHandler) VerifyResetPassword(c echo.Context) (err error) {
 		},
 		Data: response.VerifyResetPasswordResponseData{
 			Valid: valid,
+		},
+	})
+}
+
+// ResetPassword godoc
+// @Summary ResetPassword
+// @Description ResetPassword
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param reset password body request.ResetPasswordReq true "Reset Password user"
+// @Success 200
+// @Router /api/v1/auth/reset-password [post]
+func (h *AuthHandler) ResetPassword(c echo.Context) (err error) {
+	ctx := c.Request().Context()
+	var req request.ResetPasswordReq
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.ForgotPasswordMessage.ResetPasswordFailed,
+			Error:   err.Error(),
+		})
+	}
+
+	if err := req.Validate(); err != nil {
+		errVal := err.(validation.Errors)
+		return c.JSON(http.StatusBadRequest, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.ForgotPasswordMessage.ResetPasswordFailed,
+			Error:   errVal,
+		})
+	}
+
+	err = h.ForgotPasswordUC.ResetPassword(ctx, &req)
+
+	if err != nil {
+		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.ForgotPasswordMessage.ResetPasswordFailed))
+	}
+
+	return c.JSON(http.StatusOK, response.ResetPasswordResponse{
+		BasicResponse: response.BasicResponse{
+			Status:  constant.Status.Success,
+			Message: constant.ForgotPasswordMessage.ResetPasswordSuccess,
 		},
 	})
 }

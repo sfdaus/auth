@@ -32,3 +32,24 @@ func (request VerifyResetPasswordReq) Validate() error {
 		),
 	)
 }
+
+type ResetPasswordReq struct {
+	Token          string `json:"token"`
+	Password       string `json:"password"`
+	VerifyPassword string `json:"verify_password"`
+}
+
+func (request ResetPasswordReq) Validate() error {
+	return validation.ValidateStruct(&request,
+		validation.Field(
+			&request.Token,
+			validation.Required.Error(utils.ErrForgotPasswordMissingToken.Error()),
+		),
+		validation.Field(
+			&request.Password,
+		),
+		validation.Field(
+			&request.VerifyPassword,
+		),
+	)
+}

@@ -52,3 +52,9 @@ func (r *pgsqlUserRepository) GetByUserID(ctx context.Context, userID string) (u
 	err = r.db.QueryRowContext(ctx, query, userID).Scan(&user.ID, &user.Email, &user.Password, &user.IsActive, &user.DeletedAt)
 	return
 }
+
+func (r *pgsqlUserRepository) UpdatePasswordByUserID(ctx context.Context, userID string, newPassword string) (err error) {
+	query := "UPDATE users SET password = $1 WHERE id = $2 and is_active = true"
+	_, err = r.db.ExecContext(ctx, query, newPassword, userID)
+	return
+}

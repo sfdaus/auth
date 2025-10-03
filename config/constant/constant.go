@@ -117,6 +117,8 @@ type ForgotPasswordResponseMessage struct {
 	VerifyResetPasswordSuccess             string
 	VerifyResetPasswordFailed              string
 	VerifyResetPasswordTokenNotValid       string
+	ResetPasswordSuccess                   string
+	ResetPasswordFailed                    string
 }
 
 var ForgotPasswordMessage = ForgotPasswordResponseMessage{
@@ -126,6 +128,8 @@ var ForgotPasswordMessage = ForgotPasswordResponseMessage{
 	VerifyResetPasswordSuccess:       "Verify reset password successful",
 	VerifyResetPasswordFailed:        "Verify reset password failed",
 	VerifyResetPasswordTokenNotValid: "Token not valid",
+	ResetPasswordSuccess:             "Reset password successful",
+	ResetPasswordFailed:              "Reset password failed",
 }
 
 const (

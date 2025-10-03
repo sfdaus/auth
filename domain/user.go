@@ -34,6 +34,7 @@ type SignInUsecase interface {
 type ForgotPassword interface {
 	ForgotPassword(ctx context.Context, request *request.ForgotPasswordReq) (err error)
 	VerifyResetPassword(ctx context.Context, request *request.VerifyResetPasswordReq) (valid bool, err error)
+	ResetPassword(ctx context.Context, request *request.ResetPasswordReq) (err error)
 }
 
 // UserRepository represent the users repository contract
@@ -44,4 +45,5 @@ type UserRepository interface {
 	GetByUsername(ctx context.Context, username string) (User, error)
 	GetByPhoneNumber(ctx context.Context, phoneNumber string) (User, error)
 	GetByUserID(ctx context.Context, userID string) (User, error)
+	UpdatePasswordByUserID(ctx context.Context, userID string, newPassword string) error
 }
