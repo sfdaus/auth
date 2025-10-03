@@ -42,7 +42,7 @@ func NewAuthHandler(e *echo.Echo, middleware *middleware.Middleware, signUpUC do
 	apiV1.POST("/auth/forgot-password", handler.ForgotPassword)
 	apiV1.POST("/auth/reset-password/verify", handler.VerifyResetPassword)
 	apiV1.POST("/auth/reset-password", handler.ResetPassword)
-	apiV1.POST("/auth/verify-account/:token", handler.VerifyAccount)
+	apiV1.POST("/auth/verify-account", handler.VerifyAccount)
 }
 
 // SignUp godoc
