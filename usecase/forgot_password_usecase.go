@@ -80,7 +80,7 @@ func (u *forgotpasswordUsecase) ForgotPassword(c context.Context, request *reque
 	// Send Email
 	htmlBody, err := utils.RenderTemplate("templates/verify_forgot_password.html", map[string]interface{}{
 		"Name":      userInfo.Name,
-		"VerifyURL": fmt.Sprintf("%s/%s/%s", config.LoadConfig().BaseURLApp, "/forgot-password?token=", verificationToken),
+		"VerifyURL": fmt.Sprintf("%s/%s%s", config.LoadConfig().BaseURLApp, "forgot-password?token=", verificationToken),
 	})
 	if err != nil {
 		err = utils.NewInternalServerError("Failed to render email template")
