@@ -45,7 +45,8 @@ func (u *forgotpasswordUsecase) ForgotPassword(c context.Context, request *reque
 	ctx, cancel := context.WithTimeout(c, u.contextTimeout)
 	defer cancel()
 
-	user, err := u.userRepo.GetByEmail(ctx, request.Email)
+	encryptedMail, _ := utils.EncryptDeterministic(request.Email)
+	user, err := u.userRepo.GetByEmail(ctx, encryptedMail)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil
