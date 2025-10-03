@@ -155,7 +155,7 @@ func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (a
 	verificationToken, err := jwt.GenerateShortJWT(userID)
 	htmlBody, err := utils.RenderTemplate("templates/verify_email.html", map[string]interface{}{
 		"Name":      request.Name,
-		"VerifyURL": fmt.Sprintf("%s/%s/%s", config.LoadConfig().BaseURLApp, "api/v1/auth/verify-account", verificationToken),
+		"VerifyURL": fmt.Sprintf("%s/%s%s", config.LoadConfig().BaseURLApp, "verify-account?token=", verificationToken),
 	})
 	if err != nil {
 		err = utils.NewBadRequestError("Err")
