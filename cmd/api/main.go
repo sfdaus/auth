@@ -19,6 +19,7 @@ import (
 	"prakarsa-app/infrastructure/datastore"
 	filestorage "prakarsa-app/infrastructure/filestorage"
 	pgsqlRepository "prakarsa-app/repository/pgsql"
+	redisRepository "prakarsa-app/repository/redis"
 	"prakarsa-app/usecase"
 
 	mail "prakarsa-app/service/mail"
@@ -43,11 +44,11 @@ func main() {
 	fileStorageInstance, err := filestorage.NewFileStorage(configApp)
 	utils.PanicIfNeeded(err)
 
-	// cacheInstance, err := datastore.NewCache(configApp.CacheURL)
+	cacheInstance, err := datastore.NewCache(configApp.CacheURL)
 	utils.PanicIfNeeded(err)
 
 	// Setup repository
-	// redisRepo := redisRepository.NewRedisRepository(cacheInstance)
+	redisRepo := redisRepository.NewRedisRepository(cacheInstance)
 	userRepo := pgsqlRepository.NewPgsqlUserRepository(dbInstance)
 	authTokenRepo := pgsqlRepository.NewPgsqlAuthTokenRepository(dbInstance)
 	profileRepo := pgsqlRepository.NewPgsqlProfileRepository(dbInstance)
@@ -62,6 +63,7 @@ func main() {
 	signUpUC := usecase.SignUpUsecase(userRepo, authTokenRepo, profileRepo, cryptoSvc, jwtSvc, ctxTimeout, emailSvc)
 	signInUC := usecase.SignInUsecase(userRepo, cryptoSvc, jwtSvc, ctxTimeout)
 	profileUC := usecase.ProfileUsecase(profileRepo, ctxTimeout, fileStorageInstance)
+	forgotPasswordUC := usecase.ForgotPasswordUsecase(userRepo, redisRepo, cryptoSvc, jwtSvc, ctxTimeout)
 
 	// Setup app middleware
 	appMiddleware := appMiddleware.NewMiddleware(jwtSvc)
@@ -79,7 +81,7 @@ func main() {
 		return c.NoContent(http.StatusOK)
 	})
 
-	httpDelivery.NewAuthHandler(e, appMiddleware, signUpUC, signInUC, profileUC)
+	httpDelivery.NewAuthHandler(e, appMiddleware, signUpUC, signInUC, profileUC, forgotPasswordUC)
 
 	e.Static("/templates", "templates")
 

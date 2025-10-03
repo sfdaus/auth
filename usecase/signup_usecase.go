@@ -155,7 +155,7 @@ func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (a
 	verificationToken, err := jwt.GenerateShortJWT(userID)
 	htmlBody, err := utils.RenderTemplate("templates/verify_email.html", map[string]interface{}{
 		"Name":      request.Name,
-		"VerifyURL": fmt.Sprintf("%s/%s/%s", config.LoadConfig().BaseURL, "verify-account", verificationToken),
+		"VerifyURL": fmt.Sprintf("%s/%s/%s", config.LoadConfig().BaseURL, "api/v1/auth/verify-account", verificationToken),
 	})
 	if err != nil {
 		err = utils.NewBadRequestError("Err")
@@ -174,12 +174,21 @@ func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (a
 	return
 }
 
-// func (u *signupUsecase) VerifyAccount(c context.Context, request *request.VerifyAccount) (accessToken string, userId string, err error) {
-// 	ctx, cancel := context.WithTimeout(c, u.contextTimeout)
-// 	defer cancel()
+func (u *signupUsecase) VerifyAccount(c context.Context, request *request.VerifyAccount) (accessToken string, userId string, err error) {
+	ctx, cancel := context.WithTimeout(c, u.contextTimeout)
+	defer cancel()
 
-// 	user, err := u.userRepo.GetByEmail(ctx, request.UserI)
-// 	if err != nil && err != sql.ErrNoRows {
-// 		return
-// 	}
-// }
+	userId = request.UserID
+	err = u.userRepo.VerifyAccountByUserID(ctx, request.UserID)
+	if err != nil && err != sql.ErrNoRows {
+		return
+	}
+
+	tokenVersion := utils.GenerateTokenVersion()
+	accessToken, err = u.jwtSvc.GenerateToken(ctx, request.UserID, tokenVersion)
+	if err != nil {
+		err = utils.NewBadRequestError(constant.SignupMessage.SignupFailedToGenerateToken)
+		return
+	}
+	return
+}
