@@ -21,6 +21,7 @@ type User struct {
 	UpdatedAt    int64  `json:"updated_at"`
 	UpdatedBy    string `json:"updated_by"`
 	DeletedAt    int64  `json:"deleted_at"`
+	IsVerified   bool   `json:"is_verified"`
 }
 
 type SignUpUsecase interface {

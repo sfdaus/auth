@@ -21,6 +21,8 @@ import (
 	pgsqlRepository "prakarsa-app/repository/pgsql"
 	"prakarsa-app/usecase"
 
+	mail "prakarsa-app/service/mail"
+
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	echoSwagger "github.com/swaggo/echo-swagger"
@@ -53,10 +55,11 @@ func main() {
 	// Setup Service
 	cryptoSvc := crypto.NewCryptoService()
 	jwtSvc := jwt.NewJWTService(configApp.JWTSecretKey)
+	emailSvc := mail.NewResendEmailService(configApp.ResendAPIKey, configApp.ResendFrom)
 
 	// Setup usecase
 	ctxTimeout := time.Duration(configApp.ContextTimeout) * time.Second
-	signUpUC := usecase.SignUpUsecase(userRepo, authTokenRepo, profileRepo, cryptoSvc, jwtSvc, ctxTimeout)
+	signUpUC := usecase.SignUpUsecase(userRepo, authTokenRepo, profileRepo, cryptoSvc, jwtSvc, ctxTimeout, emailSvc)
 	signInUC := usecase.SignInUsecase(userRepo, cryptoSvc, jwtSvc, ctxTimeout)
 	profileUC := usecase.ProfileUsecase(profileRepo, ctxTimeout, fileStorageInstance)
 
@@ -77,6 +80,8 @@ func main() {
 	})
 
 	httpDelivery.NewAuthHandler(e, appMiddleware, signUpUC, signInUC, profileUC)
+
+	e.Static("/templates", "templates")
 
 	// Start server
 	go func() {

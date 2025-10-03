@@ -36,6 +36,8 @@ type SignupResponseMessage struct {
 	SignupFailedToCreateProfile   string
 	SignupFailedToCreateAuthToken string
 	SignupFailedToGenerateToken   string
+	SignupFailedToSendEmail       string
+	SignupFailedEncryptEmail      string
 }
 
 var SignupMessage = SignupResponseMessage{
@@ -46,6 +48,8 @@ var SignupMessage = SignupResponseMessage{
 	SignupFailedToCreateProfile:   "Failed to create profile",
 	SignupFailedToCreateAuthToken: "Failed to create auth token",
 	SignupFailedToGenerateToken:   "Failed to generate access token",
+	SignupFailedToSendEmail:       "Failed to send Email",
+	SignupFailedEncryptEmail:      "Failed to encrypt Email",
 }
 
 type CompleteProfileResponseMessage struct {

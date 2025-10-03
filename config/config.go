@@ -9,12 +9,14 @@ import (
 )
 
 type Config struct {
-	PublicURL      string
-	DatabaseURL    string
-	CacheURL       string
-	LoggerLevel    string
-	ContextTimeout int
-	JWTSecretKey   string
+	BaseURL                string
+	PublicURL              string
+	DatabaseURL            string
+	CacheURL               string
+	LoggerLevel            string
+	ContextTimeout         int
+	JWTSecretKey           string
+	AccountVerificationTtl int
 
 	StorageType    string
 	LocalPath      string
@@ -24,6 +26,11 @@ type Config struct {
 	S3UseSSL       bool
 	S3PublicDomain string
 	S3Bucket       string
+
+	ResendAPIKey string
+	ResendFrom   string
+
+	EncryptionSecretKey string
 }
 
 func LoadConfig() *Config {
@@ -31,12 +38,14 @@ func LoadConfig() *Config {
 	_ = godotenv.Load()
 
 	cfg := &Config{
-		PublicURL:      mustGetEnv("PUBLIC_URL"),
-		DatabaseURL:    mustGetEnv("DATABASE_URL"),
-		CacheURL:       getEnv("CACHE_URL", ""),
-		LoggerLevel:    getEnv("LOGGER_LEVEL", "info"),
-		ContextTimeout: getEnvInt("CONTEXT_TIMEOUT", 10),
-		JWTSecretKey:   mustGetEnv("JWT_SECRET_KEY"),
+		BaseURL:                mustGetEnv("BASE_URL"),
+		PublicURL:              mustGetEnv("PUBLIC_URL"),
+		DatabaseURL:            mustGetEnv("DATABASE_URL"),
+		CacheURL:               getEnv("CACHE_URL", ""),
+		LoggerLevel:            getEnv("LOGGER_LEVEL", "info"),
+		ContextTimeout:         getEnvInt("CONTEXT_TIMEOUT", 10),
+		JWTSecretKey:           mustGetEnv("JWT_SECRET_KEY"),
+		AccountVerificationTtl: getEnvInt("ACCOUNT_VERIFICATION_TTL", 10),
 
 		StorageType:    getEnv("STORAGE_TYPE", "local"),
 		LocalPath:      getEnv("LOCAL_PATH", "./uploads/"),
@@ -46,6 +55,11 @@ func LoadConfig() *Config {
 		S3UseSSL:       getEnvBool("S3_USE_SSL", true),
 		S3PublicDomain: mustGetEnv("S3_PUBLIC_DOMAIN"),
 		S3Bucket:       mustGetEnv("S3_BUCKET"),
+
+		ResendAPIKey: getEnv("RESEND_API_KEY", ""),
+		ResendFrom:   getEnv("RESEND_FROM", ""),
+
+		EncryptionSecretKey: mustGetEnv("ENCRYPTION_SECRET_KEY"),
 	}
 	return cfg
 }
