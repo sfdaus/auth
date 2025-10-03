@@ -178,17 +178,17 @@ func (u *signupUsecase) VerifyAccount(c context.Context, request *request.Verify
 	ctx, cancel := context.WithTimeout(c, u.contextTimeout)
 	defer cancel()
 
-	userID, err := jwt.ValidateShortJWT(request.Token)
+	userId, err = jwt.ValidateShortJWT(request.Token)
 	if err != nil {
 		return
 	}
-	err = u.userRepo.VerifyAccountByUserID(ctx, userID)
+	err = u.userRepo.VerifyAccountByUserID(ctx, userId)
 	if err != nil && err != sql.ErrNoRows {
 		return
 	}
 
 	tokenVersion := utils.GenerateTokenVersion()
-	accessToken, err = u.jwtSvc.GenerateToken(ctx, userID, tokenVersion)
+	accessToken, err = u.jwtSvc.GenerateToken(ctx, userId, tokenVersion)
 	if err != nil {
 		err = utils.NewBadRequestError(constant.SignupMessage.SignupFailedToGenerateToken)
 		return
