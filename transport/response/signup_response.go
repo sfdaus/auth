@@ -6,6 +6,15 @@ type SignUpResponse struct {
 }
 
 type SignUpResponseData struct {
+	UserID string `json:"user_id"`
+}
+
+type SignUpVerificationResponse struct {
+	BasicResponse
+	Data SignUpVerificationResponseData `json:"data,omitempty"`
+}
+
+type SignUpVerificationResponseData struct {
 	UserID      string `json:"user_id"`
 	AccessToken string `json:"access_token"`
 }

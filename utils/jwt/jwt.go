@@ -2,10 +2,10 @@ package jwt
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"prakarsa-app/config"
 	"prakarsa-app/config/constant"
+	"prakarsa-app/utils"
 	"time"
 
 	"github.com/google/uuid"
@@ -84,7 +84,7 @@ func ValidateShortJWT(tokenStr string) (userID string, err error) {
 	secret := []byte(config.LoadConfig().JWTSecretKey)
 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
 		if token.Method != jwt.SigningMethodHS256 {
-			return nil, fmt.Errorf("unexpected signing method")
+			return nil, utils.NewUnauthorizedError("unexpected signing method")
 		}
 		return secret, nil
 	})
@@ -92,12 +92,12 @@ func ValidateShortJWT(tokenStr string) (userID string, err error) {
 		return "", err
 	}
 	if !token.Valid {
-		return "", errors.New("invalid token")
+		return "", utils.NewUnauthorizedError("invalid token")
 	}
 	claims := token.Claims.(jwt.MapClaims)
 	sub, ok := claims["sub"].(string)
 	if !ok {
-		return "", errors.New("invalid sub")
+		return "", utils.NewUnauthorizedError("invalid sub")
 	}
 	return sub, nil
 }
@@ -107,7 +107,7 @@ func (s *jwtService) ParseForgotPasswordToken(ctx context.Context, tokenStr stri
 	tkn, err := jwt.ParseWithClaims(tokenStr, &forgotPasswordJWTCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 		// pastikan algoritmanya sesuai (HS256)
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %T", token.Method)
+			return nil, utils.NewUnauthorizedError(fmt.Sprintf("unexpected signing method: %T", token.Method))
 		}
 		return []byte(s.secretKey), nil
 	})
@@ -117,19 +117,19 @@ func (s *jwtService) ParseForgotPasswordToken(ctx context.Context, tokenStr stri
 
 	claims, ok := tkn.Claims.(*forgotPasswordJWTCustomClaims)
 	if !ok || !tkn.Valid {
-		return nil, fmt.Errorf("invalid token")
+		return nil, utils.NewUnauthorizedError("invalid token")
 	}
 
 	// Validasi issuer & audience (defense-in-depth)
 	if claims.Issuer != s.issuer {
-		return nil, fmt.Errorf("invalid issuer")
+		return nil, utils.NewUnauthorizedError("invalid issuer")
 	}
 	if !claims.VerifyAudience("forgot_password", true) {
-		return nil, fmt.Errorf("invalid audience")
+		return nil, utils.NewUnauthorizedError("invalid audience")
 	}
 
 	if !claims.VerifyExpiresAt(time.Now().Unix(), true) {
-		return nil, fmt.Errorf("token expired")
+		return nil, utils.NewUnauthorizedError("token expired")
 	}
 
 	return claims, nil

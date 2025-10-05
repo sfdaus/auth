@@ -25,8 +25,9 @@ type User struct {
 }
 
 type SignUpUsecase interface {
-	SignUp(ctx context.Context, request *request.SignUpReq) (accessToken string, userID string, err error)
+	SignUp(ctx context.Context, request *request.SignUpReq) (userID string, err error)
 	VerifyAccount(ctx context.Context, request *request.VerifyAccountReq) (accessToken string, userID string, err error)
+	VerifyAccountResend(ctx context.Context, request *request.VerifyAccountResendReq) (userID string, err error)
 }
 
 type SignInUsecase interface {
