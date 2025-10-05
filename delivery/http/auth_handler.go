@@ -43,6 +43,7 @@ func NewAuthHandler(e *echo.Echo, middleware *middleware.Middleware, signUpUC do
 	apiV1.POST("/auth/reset-password/verify", handler.VerifyResetPassword)
 	apiV1.POST("/auth/reset-password", handler.ResetPassword)
 	apiV1.POST("/auth/verify-account", handler.VerifyAccount)
+	apiV1.POST("/auth/verify-account/resend", handler.VerifyAccountResend)
 }
 
 // SignUp godoc
@@ -75,7 +76,7 @@ func (h *AuthHandler) SignUp(c echo.Context) error {
 		})
 	}
 
-	accessToken, userID, err := h.SignUpUC.SignUp(ctx, &req)
+	userID, err := h.SignUpUC.SignUp(ctx, &req)
 	if err != nil {
 		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.SignupMessage.SignupFailed))
 	}
@@ -86,8 +87,53 @@ func (h *AuthHandler) SignUp(c echo.Context) error {
 			Message: constant.SignupMessage.SignupSuccess,
 		},
 		Data: response.SignUpResponseData{
-			UserID:      userID,
-			AccessToken: accessToken,
+			UserID: userID,
+		},
+	})
+}
+
+// Verify Account Resend godoc
+// @Summary Verify Account Resend
+// @Description Verify Account Resend
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param token body request.VerifyAccountReq true "Verify account resend"
+// @Success 200
+// @Router /api/v1/auth/verify-account/resend [post]
+func (h *AuthHandler) VerifyAccountResend(c echo.Context) error {
+	ctx := c.Request().Context()
+	var req request.VerifyAccountResendReq
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.SignupMessage.SignupFailed,
+			Error:   err.Error(),
+		})
+	}
+
+	if err := req.Validate(); err != nil {
+		errVal := err.(validation.Errors)
+		return c.JSON(http.StatusBadRequest, response.BasicResponse{
+			Status:  constant.Status.Failed,
+			Message: constant.SignupMessage.SignupFailed,
+			Error:   errVal,
+		})
+	}
+
+	userID, err := h.SignUpUC.VerifyAccountResend(ctx, &req)
+	if err != nil {
+		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.SignupMessage.SignupFailed))
+	}
+
+	return c.JSON(http.StatusOK, response.SignUpResponse{
+		BasicResponse: response.BasicResponse{
+			Status:  constant.Status.Success,
+			Message: constant.SignupMessage.SignupSuccess,
+		},
+		Data: response.SignUpResponseData{
+			UserID: userID,
 		},
 	})
 }
@@ -127,12 +173,12 @@ func (h *AuthHandler) VerifyAccount(c echo.Context) error {
 		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.SignupMessage.SignupFailed))
 	}
 
-	return c.JSON(http.StatusOK, response.SignUpResponse{
+	return c.JSON(http.StatusOK, response.SignUpVerificationResponse{
 		BasicResponse: response.BasicResponse{
 			Status:  constant.Status.Success,
 			Message: constant.SignupMessage.SignupSuccess,
 		},
-		Data: response.SignUpResponseData{
+		Data: response.SignUpVerificationResponseData{
 			UserID:      userID,
 			AccessToken: accessToken,
 		},

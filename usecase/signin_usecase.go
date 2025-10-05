@@ -48,6 +48,11 @@ func (u *signinUsecase) SignIn(c context.Context, request *request.SignInReq) (a
 		return
 	}
 
+	if !user.IsVerified {
+		err = utils.NewUnauthorizedError(constant.SigninMessage.SigninUserNotFound)
+		return
+	}
+
 	tokenVersion := utils.GenerateTokenVersion()
 	err = u.userRepo.UpdateTokenVersionByID(ctx, tokenVersion, user.ID)
 	if err != nil {
