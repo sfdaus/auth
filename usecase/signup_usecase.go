@@ -38,7 +38,7 @@ func SignUpUsecase(userRepo domain.UserRepository, authTokenRepo domain.AuthToke
 	}
 }
 
-func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (accessToken string, userID string, err error) {
+func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (userID string, err error) {
 	ctx, cancel := context.WithTimeout(c, u.contextTimeout)
 	defer cancel()
 
@@ -145,17 +145,11 @@ func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (a
 	}
 
 	userID = newUserID
-	// Generate JWT token for the new user
-	accessToken, err = u.jwtSvc.GenerateToken(ctx, newUserID, tokenVersion)
-	if err != nil {
-		err = utils.NewBadRequestError(constant.SignupMessage.SignupFailedToGenerateToken)
-		return
-	}
 
 	verificationToken, err := jwt.GenerateShortJWT(userID)
 	htmlBody, err := utils.RenderTemplate("templates/verify_email.html", map[string]interface{}{
 		"Name":      request.Name,
-		"VerifyURL": fmt.Sprintf("%s/%s%s", config.LoadConfig().BaseURLApp, "verify-account?token=", verificationToken),
+		"VerifyURL": fmt.Sprintf("%s/%s%s", config.LoadConfig().BaseURLApp, "auth/verify-account?token=", verificationToken),
 	})
 	if err != nil {
 		err = utils.NewBadRequestError("Err")
@@ -193,5 +187,57 @@ func (u *signupUsecase) VerifyAccount(c context.Context, request *request.Verify
 		err = utils.NewBadRequestError(constant.SignupMessage.SignupFailedToGenerateToken)
 		return
 	}
+	return
+}
+
+func (u *signupUsecase) VerifyAccountResend(c context.Context, request *request.VerifyAccountResendReq) (userId string, err error) {
+	ctx, cancel := context.WithTimeout(c, u.contextTimeout)
+	defer cancel()
+
+	// Get User
+	encryptedMail, err := utils.EncryptDeterministic(request.Email)
+	if err != nil {
+		err = utils.NewBadRequestError(constant.SignupMessage.SignupFailedEncryptEmail)
+		return
+	}
+
+	user, err := u.userRepo.GetByEmail(ctx, encryptedMail)
+	if err != nil && err != sql.ErrNoRows {
+		return
+	}
+	
+	if user.ID == "" {
+		err = utils.NewNotFoundError(constant.SignupMessage.SignupFailed)
+		return
+	}
+
+	if user.IsVerified {
+		err = utils.NewNotFoundError(constant.SignupMessage.SignupFailed)
+		return
+	}
+
+	// Generate Verifikasi Token
+	userId = user.ID
+	verificationToken, err := jwt.GenerateShortJWT(user.ID)
+	htmlBody, err := utils.RenderTemplate("templates/verify_email.html", map[string]interface{}{
+		"Name":      request.Name,
+		"VerifyURL": fmt.Sprintf("%s/%s%s", config.LoadConfig().BaseURLApp, "auth/verify-account?token=", verificationToken),
+	})
+	if err != nil {
+		err = utils.NewBadRequestError("Err")
+		return
+	}
+
+	// Send Email
+	err = u.emailService.SendEmail(
+		ctx,
+		request.Email,
+		"Verifikasi Email",
+		htmlBody,
+	)
+	if err != nil {
+		err = utils.NewBadRequestError(constant.SignupMessage.SignupFailedToSendEmail)
+	}
+
 	return
 }

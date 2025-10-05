@@ -30,26 +30,26 @@ func (r *pgsqlUserRepository) UpdateTokenVersionByID(ctx context.Context, tokenV
 }
 
 func (r *pgsqlUserRepository) GetByEmail(ctx context.Context, email string) (user domain.User, err error) {
-	query := "SELECT id, email, password, is_active, deleted_at FROM users WHERE email = $1"
-	err = r.db.QueryRowContext(ctx, query, email).Scan(&user.ID, &user.Email, &user.Password, &user.IsActive, &user.DeletedAt)
+	query := "SELECT id, email, password, is_active, deleted_at, is_verified FROM users WHERE email = $1"
+	err = r.db.QueryRowContext(ctx, query, email).Scan(&user.ID, &user.Email, &user.Password, &user.IsActive, &user.DeletedAt, &user.IsVerified)
 	return
 }
 
 func (r *pgsqlUserRepository) GetByUsername(ctx context.Context, username string) (user domain.User, err error) {
-	query := "SELECT id, username, password, is_active, deleted_at FROM users WHERE email = $1"
-	err = r.db.QueryRowContext(ctx, query, username).Scan(&user.ID, &user.Username, &user.Password, &user.IsActive, &user.DeletedAt)
+	query := "SELECT id, username, password, is_active, deleted_at, is_verified FROM users WHERE email = $1"
+	err = r.db.QueryRowContext(ctx, query, username).Scan(&user.ID, &user.Username, &user.Password, &user.IsActive, &user.DeletedAt, &user.IsVerified)
 	return
 }
 
 func (r *pgsqlUserRepository) GetByPhoneNumber(ctx context.Context, phoneNumber string) (user domain.User, err error) {
-	query := "SELECT id, phone_number, password, is_active, deleted_at FROM users WHERE email = $1"
-	err = r.db.QueryRowContext(ctx, query, phoneNumber).Scan(&user.ID, &user.PhoneNumber, &user.Password, &user.IsActive, &user.DeletedAt)
+	query := "SELECT id, phone_number, password, is_active, deleted_at, is_verified FROM users WHERE email = $1"
+	err = r.db.QueryRowContext(ctx, query, phoneNumber).Scan(&user.ID, &user.PhoneNumber, &user.Password, &user.IsActive, &user.DeletedAt, &user.IsVerified)
 	return
 }
 
 func (r *pgsqlUserRepository) GetByUserID(ctx context.Context, userID string) (user domain.User, err error) {
-	query := "SELECT id, email, password, is_active, deleted_at FROM users WHERE id = $1"
-	err = r.db.QueryRowContext(ctx, query, userID).Scan(&user.ID, &user.Email, &user.Password, &user.IsActive, &user.DeletedAt)
+	query := "SELECT id, email, password, is_active, deleted_at, is_verified FROM users WHERE id = $1"
+	err = r.db.QueryRowContext(ctx, query, userID).Scan(&user.ID, &user.Email, &user.Password, &user.IsActive, &user.DeletedAt, &user.IsVerified)
 	return
 }
 
