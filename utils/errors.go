@@ -33,6 +33,7 @@ var (
 	ErrNoCookie              = errors.New("not found cookie header")
 	ErrUnprocessableEntity   = errors.New("unprocessable entity")
 	ErrAuthenticationFailed  = errors.New("authentication vailed")
+	ErrTooManyRequestEntity  = errors.New("too many requests")
 
 	// SignUp specific errors
 	ErrSignUpMissingEmailOrPhone = errors.New("either email or phone number must be provided")
@@ -145,6 +146,15 @@ func NewUnprocessableEntityError(details interface{}) HttpErr {
 	}
 }
 
+// New Too Many Requests Error
+func NewTooManyRequestError(details interface{}) HttpErr {
+	return HttpError{
+		ErrStatus:  http.StatusTooManyRequests,
+		ErrError:   ErrTooManyRequestEntity.Error(),
+		ErrDetails: details,
+	}
+}
+
 // New Invalid Input Error - Validation
 func NewInvalidInputError(errs validation.Errors) HttpErr {
 	type invalidField struct {
@@ -199,6 +209,34 @@ func ParseHttpErrorToBasicResponse(err error, message string) (int, interface{})
 		Status:  constant.Status.Error,
 		Message: message,
 		Error:   err.Error(),
+	}
+}
+
+type ErrorResponseWithData struct {
+	response.BasicResponse
+	Data interface{} `json:"data"`
+}
+
+// Parse Http Error into basic response with Data
+func ParseHttpErrorToBasicResponseWithData(err error, message string, data interface{}) (int, interface{}) {
+	if httpErr, ok := err.(HttpErr); ok {
+		return httpErr.Status(), ErrorResponseWithData{
+			BasicResponse: response.BasicResponse{
+				Status:  constant.Status.Failed,
+				Message: message,
+				Error:   httpErr.Details(),
+			},
+			Data: data,
+		}
+
+	}
+	return http.StatusInternalServerError, ErrorResponseWithData{
+		BasicResponse: response.BasicResponse{
+			Status:  constant.Status.Error,
+			Message: message,
+			Error:   err.Error(),
+		},
+		Data: data,
 	}
 }
 
