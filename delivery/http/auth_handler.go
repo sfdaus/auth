@@ -76,9 +76,9 @@ func (h *AuthHandler) SignUp(c echo.Context) error {
 		})
 	}
 
-	userID, err := h.SignUpUC.SignUp(ctx, &req)
+	res, err := h.SignUpUC.SignUp(ctx, &req)
 	if err != nil {
-		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.SignupMessage.SignupFailed))
+		return c.JSON(utils.ParseHttpErrorToBasicResponseWithData(err, constant.SignupMessage.SignupFailed, res))
 	}
 
 	return c.JSON(http.StatusOK, response.SignUpResponse{
@@ -86,9 +86,7 @@ func (h *AuthHandler) SignUp(c echo.Context) error {
 			Status:  constant.Status.Success,
 			Message: constant.SignupMessage.SignupSuccess,
 		},
-		Data: response.SignUpResponseData{
-			UserID: userID,
-		},
+		Data: res,
 	})
 }
 
@@ -122,9 +120,9 @@ func (h *AuthHandler) VerifyAccountResend(c echo.Context) error {
 		})
 	}
 
-	userID, err := h.SignUpUC.VerifyAccountResend(ctx, &req)
+	res, err := h.SignUpUC.VerifyAccountResend(ctx, &req)
 	if err != nil {
-		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.SignupMessage.SignupFailed))
+		return c.JSON(utils.ParseHttpErrorToBasicResponseWithData(err, constant.SignupMessage.SignupFailed, res))
 	}
 
 	return c.JSON(http.StatusOK, response.SignUpResponse{
@@ -132,9 +130,7 @@ func (h *AuthHandler) VerifyAccountResend(c echo.Context) error {
 			Status:  constant.Status.Success,
 			Message: constant.SignupMessage.SignupSuccess,
 		},
-		Data: response.SignUpResponseData{
-			UserID: userID,
-		},
+		Data: res,
 	})
 }
 

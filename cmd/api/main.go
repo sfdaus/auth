@@ -60,7 +60,7 @@ func main() {
 
 	// Setup usecase
 	ctxTimeout := time.Duration(configApp.ContextTimeout) * time.Second
-	signUpUC := usecase.SignUpUsecase(userRepo, authTokenRepo, profileRepo, cryptoSvc, jwtSvc, ctxTimeout, emailSvc)
+	signUpUC := usecase.SignUpUsecase(userRepo, authTokenRepo, profileRepo, cryptoSvc, jwtSvc, ctxTimeout, emailSvc, redisRepo)
 	signInUC := usecase.SignInUsecase(userRepo, cryptoSvc, jwtSvc, ctxTimeout)
 	profileUC := usecase.ProfileUsecase(profileRepo, ctxTimeout, fileStorageInstance)
 	forgotPasswordUC := usecase.ForgotPasswordUsecase(userRepo, profileRepo, redisRepo, cryptoSvc, jwtSvc, ctxTimeout, emailSvc)

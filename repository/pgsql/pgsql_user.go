@@ -23,6 +23,12 @@ func (r *pgsqlUserRepository) Create(ctx context.Context, user *domain.User) (er
 	return
 }
 
+func (r *pgsqlUserRepository) Update(ctx context.Context, user *domain.User) (err error) {
+	query := `UPDATE users SET token_version = $1, password = $2, updated_at = $3 WHERE id = $4`
+	_, err = r.db.ExecContext(ctx, query, user.TokenVersion, user.Password, user.UpdatedAt, user.ID)
+	return
+}
+
 func (r *pgsqlUserRepository) UpdateTokenVersionByID(ctx context.Context, tokenVersion string, id string) (err error) {
 	query := "UPDATE users SET token_version = $1 WHERE id = $2"
 	_, err = r.db.ExecContext(ctx, query, tokenVersion, id)
