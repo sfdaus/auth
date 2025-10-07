@@ -3,10 +3,13 @@ package usecase
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"prakarsa-app/config"
+	"prakarsa-app/repository/redis"
+	"prakarsa-app/transport/response"
 	"time"
 
-	"prakarsa-app/config"
 	"prakarsa-app/config/constant"
 	"prakarsa-app/domain"
 	service "prakarsa-app/service/mail"
@@ -24,9 +27,12 @@ type signupUsecase struct {
 	jwtSvc         jwt.JWTService
 	contextTimeout time.Duration
 	emailService   service.EmailService
+	redisRepo      redis.RedisRepository
 }
 
-func SignUpUsecase(userRepo domain.UserRepository, authTokenRepo domain.AuthTokenRepository, profileRepo domain.ProfileRepository, cryptoSvc crypto.CryptoService, jwtSvc jwt.JWTService, contextTimeout time.Duration, emailService service.EmailService) *signupUsecase {
+func SignUpUsecase(userRepo domain.UserRepository, authTokenRepo domain.AuthTokenRepository, profileRepo domain.ProfileRepository,
+	cryptoSvc crypto.CryptoService, jwtSvc jwt.JWTService, contextTimeout time.Duration, emailService service.EmailService,
+	redisRepo redis.RedisRepository) *signupUsecase {
 	return &signupUsecase{
 		userRepo:       userRepo,
 		authTokenRepo:  authTokenRepo,
@@ -35,10 +41,11 @@ func SignUpUsecase(userRepo domain.UserRepository, authTokenRepo domain.AuthToke
 		jwtSvc:         jwtSvc,
 		contextTimeout: contextTimeout,
 		emailService:   emailService,
+		redisRepo:      redisRepo,
 	}
 }
 
-func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (userID string, err error) {
+func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (res response.SignUpResponseData, err error) {
 	ctx, cancel := context.WithTimeout(c, u.contextTimeout)
 	defer cancel()
 
@@ -53,7 +60,7 @@ func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (u
 		return
 	}
 
-	if user.ID != "" {
+	if user.ID != "" && user.IsVerified {
 		err = utils.NewBadRequestError(constant.SignupMessage.SignupExists)
 		return
 	}
@@ -65,9 +72,19 @@ func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (u
 
 	tokenVersion := utils.GenerateTokenVersion()
 	newUserID := utils.GenerateUUID()
+	nameAlias := utils.GenerateNameAlias(request.Name)
 
-	// Create new user
-	err = u.userRepo.Create(ctx, &domain.User{
+	// response builder
+	if user.ID != "" {
+		res.UserID = user.ID
+	} else {
+		res.UserID = newUserID
+	}
+	res.Email = request.Email
+	res.Name = request.Name
+
+	var empty = ""
+	var userPayload = domain.User{
 		ID:           newUserID,
 		Email:        encryptedMail,
 		PhoneNumber:  "",
@@ -81,20 +98,9 @@ func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (u
 		UpdatedBy:    "",
 		DeletedAt:    0,
 		IsVerified:   false,
-	})
-	if err != nil {
-		errorInfo := utils.ErrorInfo{
-			Message: constant.SignupMessage.SignupFailedToCreateUser,
-			Details: err.Error(),
-		}
-		err = utils.NewBadRequestError(errorInfo)
-		return
 	}
 
-	nameAlias := utils.GenerateNameAlias(request.Name)
-	// Create profile for the new user
-	var empty = ""
-	err = u.profileRepo.Create(ctx, &domain.Profile{
+	var profilePayload = domain.Profile{
 		UserID:        newUserID,
 		Name:          request.Name,
 		NameAlias:     nameAlias,
@@ -110,18 +116,9 @@ func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (u
 		UpdatedAt:     0,
 		UpdatedBy:     "",
 		DeletedAt:     0,
-	})
-	if err != nil {
-		errorInfo := utils.ErrorInfo{
-			Message: constant.SignupMessage.SignupFailedToCreateProfile,
-			Details: err.Error(),
-		}
-		err = utils.NewBadRequestError(errorInfo)
-		return
 	}
 
-	// Create auth token for the new user
-	err = u.authTokenRepo.Create(ctx, &domain.AuthToken{
+	var authTokenPayload = domain.AuthToken{
 		ID:           utils.GenerateUUID(),
 		UserID:       newUserID,
 		UserAgent:    "",
@@ -134,19 +131,134 @@ func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (u
 		UpdatedAt:    0,
 		UpdatedBy:    "",
 		DeletedAt:    0,
-	})
-	if err != nil {
-		errorInfo := utils.ErrorInfo{
-			Message: constant.SignupMessage.SignupFailedToCreateAuthToken,
-			Details: err.Error(),
+	}
+
+	if user.ID != "" {
+		// Update user
+		err = u.userRepo.Update(ctx, &userPayload)
+		if err != nil {
+			errorInfo := utils.ErrorInfo{
+				Message: constant.SignupMessage.SignupFailedToUpdateUser,
+				Details: err.Error(),
+			}
+			err = utils.NewBadRequestError(errorInfo)
+			return
 		}
-		err = utils.NewBadRequestError(errorInfo)
+
+		// Update profile
+		updateProfilePayload := domain.UpdateProfile{
+			Name:      request.Name,
+			NameAlias: nameAlias,
+			UpdatedAt: time.Now().Unix(),
+			UpdatedBy: "",
+		}
+		err = u.profileRepo.UpdateProfile(ctx, user.ID, &updateProfilePayload)
+		if err != nil {
+			errorInfo := utils.ErrorInfo{
+				Message: constant.SignupMessage.SignupFailedToUpdateProfile,
+				Details: err.Error(),
+			}
+			err = utils.NewBadRequestError(errorInfo)
+			return
+		}
+
+		// Update auth token for the new user
+		err = u.userRepo.UpdateTokenVersionByID(ctx, tokenVersion, user.ID)
+		if err != nil {
+			errorInfo := utils.ErrorInfo{
+				Message: constant.SignupMessage.SignupFailedToUpdateAuthToken,
+				Details: err.Error(),
+			}
+			err = utils.NewBadRequestError(errorInfo)
+			return
+		}
+	} else {
+		// Create new user
+		err = u.userRepo.Create(ctx, &userPayload)
+		if err != nil {
+			errorInfo := utils.ErrorInfo{
+				Message: constant.SignupMessage.SignupFailedToCreateUser,
+				Details: err.Error(),
+			}
+			err = utils.NewBadRequestError(errorInfo)
+			return
+		}
+
+		// Create profile for the new user
+		err = u.profileRepo.Create(ctx, &profilePayload)
+		if err != nil {
+			errorInfo := utils.ErrorInfo{
+				Message: constant.SignupMessage.SignupFailedToCreateProfile,
+				Details: err.Error(),
+			}
+			err = utils.NewBadRequestError(errorInfo)
+			return
+		}
+
+		// Create auth token for the new user
+		err = u.authTokenRepo.Create(ctx, &authTokenPayload)
+		if err != nil {
+			errorInfo := utils.ErrorInfo{
+				Message: constant.SignupMessage.SignupFailedToCreateAuthToken,
+				Details: err.Error(),
+			}
+			err = utils.NewBadRequestError(errorInfo)
+			return
+		}
+	}
+
+	// Check Limiter on Redis
+	redisValue, _ := u.redisRepo.Get(fmt.Sprintf("%s:%s", constant.SIGN_UP_LIMITER_REDIS_KEY, res.UserID))
+
+	// Create Limiter for resend
+	resendAvailableAt := time.Now().Add(constant.SIGN_UP_LIMITER_RESEND_AVAILABLE_TIME)
+	resendCount := int64(0)
+
+	res.AvailableAt = resendAvailableAt
+	res.ResendCount = resendCount
+
+	if redisValue != "" {
+		var p response.SignUpLimiterData
+		if err := json.Unmarshal([]byte(redisValue), &p); err != nil {
+			return res, fmt.Errorf("unmarshal redis value: %w", err)
+		}
+
+		resendCount = p.ResendCount + 1
+
+		res.AvailableAt = p.AvailableAt
+		res.ResendCount = resendCount
+
+		if p.ResendCount >= constant.MAX_SIGN_UP_RESEND_LIMIT {
+			res.ResendCount = p.ResendCount
+			return res, utils.NewTooManyRequestError(constant.SignupMessage.SignupFailedResendLimit)
+		}
+
+		//if p.AvailableAt.After(time.Now()) {
+		//	return res, utils.NewTooManyRequestError(constant.SignupMessage.SignupFailedResendNotAvailable)
+		//}
+
+		if p.ResendCount == (constant.MAX_SIGN_UP_RESEND_LIMIT - 1) {
+			resendAvailableAt = time.Now().Add(constant.SIGN_UP_LIMITER_ON_LIMIT_EXPIRES)
+		} else {
+			resendAvailableAt = time.Now().Add(constant.SIGN_UP_LIMITER_RESEND_ON_LIMIT_AVAILABLE_TIME)
+		}
+	}
+
+	b, _ := json.Marshal(map[string]interface{}{
+		"user_id":      res.UserID,
+		"available_at": resendAvailableAt,
+		"resend_count": resendCount,
+	})
+
+	err = u.redisRepo.Set(fmt.Sprintf("%s:%s", constant.SIGN_UP_LIMITER_REDIS_KEY, res.UserID),
+		b,
+		constant.SIGN_UP_LIMITER_ON_LIMIT_EXPIRES)
+	if err != nil {
 		return
 	}
 
-	userID = newUserID
-
-	verificationToken, err := jwt.GenerateShortJWT(userID)
+	// Generate JWT untuk verif dan send email
+	verificationToken, err := jwt.GenerateShortJWT(newUserID)
 	htmlBody, err := utils.RenderTemplate("templates/verify_email.html", map[string]interface{}{
 		"Name":      request.Name,
 		"VerifyURL": fmt.Sprintf("%s/%s%s", config.LoadConfig().BaseURLApp, "auth/verify-account?token=", verificationToken),
@@ -190,7 +302,7 @@ func (u *signupUsecase) VerifyAccount(c context.Context, request *request.Verify
 	return
 }
 
-func (u *signupUsecase) VerifyAccountResend(c context.Context, request *request.VerifyAccountResendReq) (userId string, err error) {
+func (u *signupUsecase) VerifyAccountResend(c context.Context, request *request.VerifyAccountResendReq) (res response.SignUpResponseData, err error) {
 	ctx, cancel := context.WithTimeout(c, u.contextTimeout)
 	defer cancel()
 
@@ -205,7 +317,7 @@ func (u *signupUsecase) VerifyAccountResend(c context.Context, request *request.
 	if err != nil && err != sql.ErrNoRows {
 		return
 	}
-	
+
 	if user.ID == "" {
 		err = utils.NewNotFoundError(constant.SignupMessage.SignupFailed)
 		return
@@ -216,8 +328,60 @@ func (u *signupUsecase) VerifyAccountResend(c context.Context, request *request.
 		return
 	}
 
+	// response builder
+	res.UserID = user.ID
+	res.Email = request.Email
+	res.Name = request.Name
+
+	// Check Limiter on Redis
+	redisValue, err := u.redisRepo.Get(fmt.Sprintf("%s:%s", constant.SIGN_UP_LIMITER_REDIS_KEY, user.ID))
+	if err != nil {
+		return res, utils.NewNotFoundError(constant.SignupMessage.SignupFailed)
+	}
+
+	var p response.SignUpLimiterData
+	if err := json.Unmarshal([]byte(redisValue), &p); err != nil {
+		return res, fmt.Errorf("unmarshal redis value: %w", err)
+	}
+
+	resendCount := p.ResendCount + 1
+
+	// Handler limiter
+	res.ResendCount = resendCount
+	res.AvailableAt = p.AvailableAt
+
+	if p.ResendCount >= constant.MAX_SIGN_UP_RESEND_LIMIT {
+		res.ResendCount = p.ResendCount
+		return res, utils.NewTooManyRequestError(constant.SignupMessage.SignupFailedResendLimit)
+	}
+
+	//if p.AvailableAt.After(time.Now()) {
+	//	return res, utils.NewTooManyRequestError(constant.SignupMessage.SignupFailedResendNotAvailable)
+	//}
+
+	// Create Limiter for resend
+	var resendAvailableAt = time.Now().Add(constant.SIGN_UP_LIMITER_RESEND_AVAILABLE_TIME)
+
+	if p.ResendCount == (constant.MAX_SIGN_UP_RESEND_LIMIT - 1) {
+		resendAvailableAt = time.Now().Add(constant.SIGN_UP_LIMITER_ON_LIMIT_EXPIRES)
+	} else {
+		resendAvailableAt = time.Now().Add(constant.SIGN_UP_LIMITER_RESEND_ON_LIMIT_AVAILABLE_TIME)
+	}
+
+	b, _ := json.Marshal(map[string]interface{}{
+		"user_id":      user.ID,
+		"available_at": resendAvailableAt,
+		"resend_count": resendCount,
+	})
+
+	err = u.redisRepo.Set(fmt.Sprintf("%s:%s", constant.SIGN_UP_LIMITER_REDIS_KEY, user.ID),
+		b,
+		constant.SIGN_UP_LIMITER_ON_LIMIT_EXPIRES)
+	if err != nil {
+		return
+	}
+
 	// Generate Verifikasi Token
-	userId = user.ID
 	verificationToken, err := jwt.GenerateShortJWT(user.ID)
 	htmlBody, err := utils.RenderTemplate("templates/verify_email.html", map[string]interface{}{
 		"Name":      request.Name,

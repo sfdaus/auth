@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"prakarsa-app/transport/response"
 
 	"prakarsa-app/transport/request"
 )
@@ -25,9 +26,9 @@ type User struct {
 }
 
 type SignUpUsecase interface {
-	SignUp(ctx context.Context, request *request.SignUpReq) (userID string, err error)
+	SignUp(ctx context.Context, request *request.SignUpReq) (res response.SignUpResponseData, err error)
 	VerifyAccount(ctx context.Context, request *request.VerifyAccountReq) (accessToken string, userID string, err error)
-	VerifyAccountResend(ctx context.Context, request *request.VerifyAccountResendReq) (userID string, err error)
+	VerifyAccountResend(ctx context.Context, request *request.VerifyAccountResendReq) (res response.SignUpResponseData, err error)
 }
 
 type SignInUsecase interface {
@@ -43,6 +44,7 @@ type ForgotPassword interface {
 // UserRepository represent the users repository contract
 type UserRepository interface {
 	Create(ctx context.Context, user *User) error
+	Update(ctx context.Context, user *User) error
 	UpdateTokenVersionByID(ctx context.Context, tokenVersion string, id string) error
 	GetByEmail(ctx context.Context, email string) (User, error)
 	GetByUsername(ctx context.Context, username string) (User, error)

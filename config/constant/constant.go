@@ -14,6 +14,11 @@ var Status = ResponseStatus{
 	Error:   "error",
 }
 
+const (
+	MAX_SIGN_UP_RESEND_LIMIT         = 3
+	MAX_FORGOT_PASSWORD_RESEND_LIMIT = 3
+)
+
 type SigninResponseMessage struct {
 	SigninSuccess                  string
 	SignininFailed                 string
@@ -31,28 +36,47 @@ var SigninMessage = SigninResponseMessage{
 }
 
 type SignupResponseMessage struct {
-	SignupSuccess                 string
-	SignupFailed                  string
-	SignupExists                  string
-	SignupFailedToCreateUser      string
-	SignupFailedToCreateProfile   string
-	SignupFailedToCreateAuthToken string
-	SignupFailedToGenerateToken   string
-	SignupFailedToSendEmail       string
-	SignupFailedEncryptEmail      string
+	SignupSuccess                  string
+	SignupFailed                   string
+	SignupExists                   string
+	SignupFailedToCreateUser       string
+	SignupFailedToCreateProfile    string
+	SignupFailedToCreateAuthToken  string
+	SignupFailedToUpdateUser       string
+	SignupFailedToUpdateProfile    string
+	SignupFailedToUpdateAuthToken  string
+	SignupFailedToGenerateToken    string
+	SignupFailedToSendEmail        string
+	SignupFailedEncryptEmail       string
+	SignupFailedResendNotAvailable string
+	SignupFailedResendLimit        string
 }
 
 var SignupMessage = SignupResponseMessage{
-	SignupSuccess:                 "Sign up successful",
-	SignupFailed:                  "Sign up failed",
-	SignupExists:                  "Email/phone number/username already registered",
-	SignupFailedToCreateUser:      "Failed to create user",
-	SignupFailedToCreateProfile:   "Failed to create profile",
-	SignupFailedToCreateAuthToken: "Failed to create auth token",
-	SignupFailedToGenerateToken:   "Failed to generate access token",
-	SignupFailedToSendEmail:       "Failed to send Email",
-	SignupFailedEncryptEmail:      "Failed to encrypt Email",
+	SignupSuccess:                  "Sign up successful",
+	SignupFailed:                   "Sign up failed",
+	SignupExists:                   "Email/phone number/username already registered",
+	SignupFailedToCreateUser:       "Failed to create user",
+	SignupFailedToCreateProfile:    "Failed to create profile",
+	SignupFailedToCreateAuthToken:  "Failed to create auth token",
+	SignupFailedToUpdateUser:       "Failed to update user",
+	SignupFailedToUpdateProfile:    "Failed to update profile",
+	SignupFailedToUpdateAuthToken:  "Failed to update auth token",
+	SignupFailedToGenerateToken:    "Failed to generate access token",
+	SignupFailedToSendEmail:        "Failed to send Email",
+	SignupFailedEncryptEmail:       "Failed to encrypt Email",
+	SignupFailedResendNotAvailable: "Resend not available",
+	SignupFailedResendLimit:        "Account verification resend limit reached",
 }
+
+const (
+	SIGN_UP_LIMITER_REDIS_KEY = "sign-up-limiter"
+
+	SIGN_UP_LIMITER_EXPIRES                        = time.Minute * 5
+	SIGN_UP_LIMITER_RESEND_AVAILABLE_TIME          = time.Minute * 1
+	SIGN_UP_LIMITER_RESEND_ON_LIMIT_AVAILABLE_TIME = time.Hour * 24
+	SIGN_UP_LIMITER_ON_LIMIT_EXPIRES               = time.Hour * 24
+)
 
 type CompleteProfileResponseMessage struct {
 	CompleteProfileSuccess string
