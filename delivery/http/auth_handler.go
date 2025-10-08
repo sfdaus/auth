@@ -470,10 +470,10 @@ func (h *AuthHandler) ForgotPassword(c echo.Context) (err error) {
 		})
 	}
 
-	err = h.ForgotPasswordUC.ForgotPassword(ctx, &req)
+	res, err := h.ForgotPasswordUC.ForgotPassword(ctx, &req)
 
 	if err != nil {
-		return c.JSON(utils.ParseHttpErrorToBasicResponse(err, constant.ForgotPasswordMessage.ForgotPasswordFailed))
+		return c.JSON(utils.ParseHttpErrorToBasicResponseWithData(err, constant.ForgotPasswordMessage.ForgotPasswordFailed, res))
 	}
 
 	return c.JSON(http.StatusAccepted, response.ForgotPasswordResponse{
@@ -481,6 +481,7 @@ func (h *AuthHandler) ForgotPassword(c echo.Context) (err error) {
 			Status:  constant.Status.Success,
 			Message: constant.ForgotPasswordMessage.ForgotPasswordSuccess,
 		},
+		Data: res,
 	})
 }
 
