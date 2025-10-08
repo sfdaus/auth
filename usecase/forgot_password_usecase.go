@@ -41,7 +41,7 @@ func ForgotPasswordUsecase(userRepo domain.UserRepository, profileRepo domain.Pr
 	}
 }
 
-func (u *forgotpasswordUsecase) ForgotPassword(c context.Context, request *request.ForgotPasswordReq) (err error) {
+func (u *forgotpasswordUsecase) ForgotPassword(c context.Context, request *request.ForgotPasswordReq) (res response.ForgotPasswordResponseData, err error) {
 	ctx, cancel := context.WithTimeout(c, u.contextTimeout)
 	defer cancel()
 
@@ -49,21 +49,61 @@ func (u *forgotpasswordUsecase) ForgotPassword(c context.Context, request *reque
 	user, err := u.userRepo.GetByEmail(ctx, encryptedMail)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil
+			return res, nil
 		}
 		return
 	}
 
-	verificationToken, jti, err := u.jwtSvc.GenerateForgotPasswordToken(ctx, user.ID)
+	verificationToken, _, err := u.jwtSvc.GenerateForgotPasswordToken(ctx, user.ID)
+
+	// Check Limiter on Redis
+	var resendCount int64
+	var resendAvailableAt = time.Now().Add(constant.FORGOT_PASSWORD_RESEND_AVAILABLE_TIME)
+
+	redisValue, _ := u.redisRepo.Get(fmt.Sprintf("%s:%s", constant.FORGOT_PASSWORD_REDIS_KEY, user.ID))
+
+	if redisValue != "" {
+		var p response.ResetPasswordLimiterData
+		if err := json.Unmarshal([]byte(redisValue), &p); err != nil {
+			return res, fmt.Errorf("unmarshal redis value: %w", err)
+		}
+
+		if p.ResendCount >= constant.MAX_FORGOT_PASSWORD_RESEND_LIMIT {
+			res.AvailableAt = p.AvailableAt
+			res.ResendCount = p.ResendCount
+			return res, utils.NewTooManyRequestError(constant.ForgotPasswordMessage.ResetPasswordFailedResendLimit)
+		}
+
+		if p.AvailableAt.After(time.Now()) {
+			res.AvailableAt = p.AvailableAt
+			res.ResendCount = p.ResendCount
+			return res, utils.NewTooManyRequestError(constant.ForgotPasswordMessage.ResetPasswordFailedResendNotAvailable)
+		}
+
+		res.AvailableAt = resendAvailableAt
+		resendCount = p.ResendCount + 1
+		res.ResendCount = resendCount
+
+		if p.ResendCount == (constant.MAX_FORGOT_PASSWORD_RESEND_LIMIT - 1) {
+			resendAvailableAt = time.Now().Add(constant.FORGOT_PASSWORD_RESEND_ON_LIMIT_AVAILABLE_TIME)
+		}
+	} else {
+		resendCount = 0
+
+		res.AvailableAt = resendAvailableAt
+		res.ResendCount = resendCount
+	}
 
 	// Write on redis
-	b, _ := json.Marshal(map[string]string{
-		"user_id": user.ID,
+	b, _ := json.Marshal(map[string]interface{}{
+		"user_id":      user.ID,
+		"available_at": resendAvailableAt,
+		"resend_count": resendCount,
 	})
 
-	err = u.redisRepo.Set(fmt.Sprintf("%s:token:%s", constant.FORGOT_PASSWORD_REDIS_KEY, jti),
+	err = u.redisRepo.Set(fmt.Sprintf("%s:%s", constant.FORGOT_PASSWORD_REDIS_KEY, user.ID),
 		b,
-		constant.FORGOT_PASSWORD_EXPIRES)
+		constant.FORGOT_PASSWORD_ON_LIMIT_EXPIRES)
 	if err != nil {
 		return
 	}
@@ -72,7 +112,7 @@ func (u *forgotpasswordUsecase) ForgotPassword(c context.Context, request *reque
 	userInfo, err := u.profileRepo.GetUserProfileByUserID(ctx, user.ID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil
+			return res, nil
 		}
 		return
 	}
@@ -108,7 +148,7 @@ func (u *forgotpasswordUsecase) VerifyResetPassword(c context.Context, request *
 	}
 
 	// Check redis
-	redisValue, err := u.redisRepo.Get(fmt.Sprintf("%s:token:%s", constant.FORGOT_PASSWORD_REDIS_KEY, claim.Id))
+	redisValue, err := u.redisRepo.Get(fmt.Sprintf("%s:%s", constant.FORGOT_PASSWORD_REDIS_KEY, claim.UserID))
 	if err != nil {
 		return false, utils.NewNotFoundError(constant.ForgotPasswordMessage.VerifyResetPasswordTokenNotValid)
 	}
@@ -147,7 +187,7 @@ func (u *forgotpasswordUsecase) ResetPassword(c context.Context, request *reques
 	}
 
 	// Check redis
-	redisValue, err := u.redisRepo.Get(fmt.Sprintf("%s:token:%s", constant.FORGOT_PASSWORD_REDIS_KEY, claim.Id))
+	redisValue, err := u.redisRepo.Get(fmt.Sprintf("%s:%s", constant.FORGOT_PASSWORD_REDIS_KEY, claim.UserID))
 	if err != nil {
 		return utils.NewNotFoundError(constant.ForgotPasswordMessage.VerifyResetPasswordTokenNotValid)
 	}
@@ -178,7 +218,7 @@ func (u *forgotpasswordUsecase) ResetPassword(c context.Context, request *reques
 	}
 
 	// Delete redis
-	_ = u.redisRepo.Del(fmt.Sprintf("%s:token:%s", constant.FORGOT_PASSWORD_REDIS_KEY, claim.Id))
+	_ = u.redisRepo.Del(fmt.Sprintf("%s:%s", constant.FORGOT_PASSWORD_REDIS_KEY, claim.UserID))
 
 	return
 }

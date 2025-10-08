@@ -72,7 +72,6 @@ var SignupMessage = SignupResponseMessage{
 const (
 	SIGN_UP_LIMITER_REDIS_KEY = "sign-up-limiter"
 
-	SIGN_UP_LIMITER_EXPIRES                        = time.Minute * 5
 	SIGN_UP_LIMITER_RESEND_AVAILABLE_TIME          = time.Minute * 1
 	SIGN_UP_LIMITER_RESEND_ON_LIMIT_AVAILABLE_TIME = time.Hour * 24
 	SIGN_UP_LIMITER_ON_LIMIT_EXPIRES               = time.Hour * 24
@@ -147,21 +146,28 @@ type ForgotPasswordResponseMessage struct {
 	VerifyResetPasswordTokenNotValid       string
 	ResetPasswordSuccess                   string
 	ResetPasswordFailed                    string
+	ResetPasswordFailedResendNotAvailable  string
+	ResetPasswordFailedResendLimit         string
 }
 
 var ForgotPasswordMessage = ForgotPasswordResponseMessage{
-	ForgotPasswordSuccess:            "Forgot password successful",
-	ForgotPasswordFailed:             "Forgot password failed",
-	ForgotPasswordUserNotFound:       "User not found",
-	VerifyResetPasswordSuccess:       "Verify reset password successful",
-	VerifyResetPasswordFailed:        "Verify reset password failed",
-	VerifyResetPasswordTokenNotValid: "Token not valid",
-	ResetPasswordSuccess:             "Reset password successful",
-	ResetPasswordFailed:              "Reset password failed",
+	ForgotPasswordSuccess:                 "Forgot password successful",
+	ForgotPasswordFailed:                  "Forgot password failed",
+	ForgotPasswordUserNotFound:            "User not found",
+	VerifyResetPasswordSuccess:            "Verify reset password successful",
+	VerifyResetPasswordFailed:             "Verify reset password failed",
+	VerifyResetPasswordTokenNotValid:      "Token not valid",
+	ResetPasswordSuccess:                  "Reset password successful",
+	ResetPasswordFailed:                   "Reset password failed",
+	ResetPasswordFailedResendNotAvailable: "Resend not available",
+	ResetPasswordFailedResendLimit:        "Reset password resend limit reached",
 }
 
 const (
 	FORGOT_PASSWORD_REDIS_KEY = "forgot-password"
 
-	FORGOT_PASSWORD_EXPIRES = time.Minute * 10
+	FORGOT_PASSWORD_RESEND_AVAILABLE_TIME          = time.Minute * 1
+	FORGOT_PASSWORD_EXPIRES                        = time.Minute * 5
+	FORGOT_PASSWORD_RESEND_ON_LIMIT_AVAILABLE_TIME = time.Hour * 24
+	FORGOT_PASSWORD_ON_LIMIT_EXPIRES               = time.Hour * 24
 )
