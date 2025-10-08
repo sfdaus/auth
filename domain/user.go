@@ -36,7 +36,7 @@ type SignInUsecase interface {
 }
 
 type ForgotPassword interface {
-	ForgotPassword(ctx context.Context, request *request.ForgotPasswordReq) (err error)
+	ForgotPassword(ctx context.Context, request *request.ForgotPasswordReq) (res response.ForgotPasswordResponseData, err error)
 	VerifyResetPassword(ctx context.Context, request *request.VerifyResetPasswordReq) (valid bool, err error)
 	ResetPassword(ctx context.Context, request *request.ResetPasswordReq) (err error)
 }
