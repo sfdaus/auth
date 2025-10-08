@@ -214,35 +214,35 @@ func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (r
 	resendAvailableAt := time.Now().Add(constant.SIGN_UP_LIMITER_RESEND_AVAILABLE_TIME)
 	resendCount := int64(0)
 
-	res.AvailableAt = resendAvailableAt
-	res.ResendCount = resendCount
-
 	if redisValue != "" {
 		var p response.SignUpLimiterData
 		if err := json.Unmarshal([]byte(redisValue), &p); err != nil {
 			return res, fmt.Errorf("unmarshal redis value: %w", err)
 		}
 
-		resendCount = p.ResendCount + 1
-
-		res.AvailableAt = p.AvailableAt
-		res.ResendCount = resendCount
-
 		if p.ResendCount >= constant.MAX_SIGN_UP_RESEND_LIMIT {
+			res.AvailableAt = p.AvailableAt
 			res.ResendCount = p.ResendCount
 			return res, utils.NewTooManyRequestError(constant.SignupMessage.SignupFailedResendLimit)
 		}
 
 		if p.AvailableAt.After(time.Now()) {
+			res.AvailableAt = p.AvailableAt
+			res.ResendCount = p.ResendCount
 			return res, utils.NewTooManyRequestError(constant.SignupMessage.SignupFailedResendNotAvailable)
 		}
 
+		res.AvailableAt = resendAvailableAt
+		resendCount = p.ResendCount + 1
+		res.ResendCount = resendCount
+
 		if p.ResendCount == (constant.MAX_SIGN_UP_RESEND_LIMIT - 1) {
-			resendAvailableAt = time.Now().Add(constant.SIGN_UP_LIMITER_ON_LIMIT_EXPIRES)
-		} else {
 			resendAvailableAt = time.Now().Add(constant.SIGN_UP_LIMITER_RESEND_ON_LIMIT_AVAILABLE_TIME)
 		}
 	}
+
+	res.AvailableAt = resendAvailableAt
+	res.ResendCount = resendCount
 
 	b, _ := json.Marshal(map[string]interface{}{
 		"user_id":      res.UserID,
@@ -334,6 +334,8 @@ func (u *signupUsecase) VerifyAccountResend(c context.Context, request *request.
 	res.Name = request.Name
 
 	// Check Limiter on Redis
+	var resendAvailableAt = time.Now().Add(constant.SIGN_UP_LIMITER_RESEND_AVAILABLE_TIME)
+	var resendCount int64
 	redisValue, err := u.redisRepo.Get(fmt.Sprintf("%s:%s", constant.SIGN_UP_LIMITER_REDIS_KEY, user.ID))
 	if err != nil {
 		return res, utils.NewNotFoundError(constant.SignupMessage.SignupFailed)
@@ -344,28 +346,25 @@ func (u *signupUsecase) VerifyAccountResend(c context.Context, request *request.
 		return res, fmt.Errorf("unmarshal redis value: %w", err)
 	}
 
-	resendCount := p.ResendCount + 1
-
-	// Handler limiter
-	res.ResendCount = resendCount
-	res.AvailableAt = p.AvailableAt
-
 	if p.ResendCount >= constant.MAX_SIGN_UP_RESEND_LIMIT {
+		res.AvailableAt = p.AvailableAt
 		res.ResendCount = p.ResendCount
 		return res, utils.NewTooManyRequestError(constant.SignupMessage.SignupFailedResendLimit)
 	}
 
 	if p.AvailableAt.After(time.Now()) {
+		res.AvailableAt = p.AvailableAt
+		res.ResendCount = p.ResendCount
 		return res, utils.NewTooManyRequestError(constant.SignupMessage.SignupFailedResendNotAvailable)
 	}
 
-	// Create Limiter for resend
-	var resendAvailableAt = time.Now().Add(constant.SIGN_UP_LIMITER_RESEND_AVAILABLE_TIME)
+	res.AvailableAt = resendAvailableAt
+	resendCount = p.ResendCount + 1
+	res.ResendCount = resendCount
 
+	// Create Limiter for resend
 	if p.ResendCount == (constant.MAX_SIGN_UP_RESEND_LIMIT - 1) {
 		resendAvailableAt = time.Now().Add(constant.SIGN_UP_LIMITER_ON_LIMIT_EXPIRES)
-	} else {
-		resendAvailableAt = time.Now().Add(constant.SIGN_UP_LIMITER_RESEND_ON_LIMIT_AVAILABLE_TIME)
 	}
 
 	b, _ := json.Marshal(map[string]interface{}{
