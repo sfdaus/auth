@@ -233,9 +233,9 @@ func (u *signupUsecase) SignUp(c context.Context, request *request.SignUpReq) (r
 			return res, utils.NewTooManyRequestError(constant.SignupMessage.SignupFailedResendLimit)
 		}
 
-		//if p.AvailableAt.After(time.Now()) {
-		//	return res, utils.NewTooManyRequestError(constant.SignupMessage.SignupFailedResendNotAvailable)
-		//}
+		if p.AvailableAt.After(time.Now()) {
+			return res, utils.NewTooManyRequestError(constant.SignupMessage.SignupFailedResendNotAvailable)
+		}
 
 		if p.ResendCount == (constant.MAX_SIGN_UP_RESEND_LIMIT - 1) {
 			resendAvailableAt = time.Now().Add(constant.SIGN_UP_LIMITER_ON_LIMIT_EXPIRES)
@@ -355,9 +355,9 @@ func (u *signupUsecase) VerifyAccountResend(c context.Context, request *request.
 		return res, utils.NewTooManyRequestError(constant.SignupMessage.SignupFailedResendLimit)
 	}
 
-	//if p.AvailableAt.After(time.Now()) {
-	//	return res, utils.NewTooManyRequestError(constant.SignupMessage.SignupFailedResendNotAvailable)
-	//}
+	if p.AvailableAt.After(time.Now()) {
+		return res, utils.NewTooManyRequestError(constant.SignupMessage.SignupFailedResendNotAvailable)
+	}
 
 	// Create Limiter for resend
 	var resendAvailableAt = time.Now().Add(constant.SIGN_UP_LIMITER_RESEND_AVAILABLE_TIME)
