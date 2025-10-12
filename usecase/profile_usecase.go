@@ -127,10 +127,9 @@ func (u *profileUsecase) UpdateProfile(ctx context.Context, userID string, reque
 	var empty = ""
 
 	updateProfilePayload := &domain.UpdateProfile{
-		Gender:        request.Gender,
-		InstitutionID: request.InstitutionID,
-		UpdatedAt:     time.Now().Unix(),
-		UpdatedBy:     profile.UserID,
+		Gender:    request.Gender,
+		UpdatedAt: time.Now().Unix(),
+		UpdatedBy: profile.UserID,
 	}
 
 	if request.BirthDate != "" {
@@ -182,6 +181,12 @@ func (u *profileUsecase) UpdateProfile(ctx context.Context, userID string, reque
 		updateProfilePayload.Linkedin = &request.Linkedin
 	}
 
+	if request.InstitutionDelete != nil && utils.AsBool(request.InstitutionDelete) {
+		updateProfilePayload.InstitutionID = &empty
+	} else if request.InstitutionID != "" {
+		updateProfilePayload.InstitutionID = &request.InstitutionID
+	}
+
 	err = u.profileRepo.UpdateProfile(ctx, userID, updateProfilePayload)
 
 	if err != nil {
@@ -210,10 +215,12 @@ func (u *profileUsecase) UserProfileByID(ctx context.Context, request *request.U
 		return domain.SecureUserProfile{}, err
 	}
 
-	userProfile.Avatar, err = u.fileStorage.GetURL(ctx, userProfile.Avatar, time.Hour*24)
+	tempAvatar, err := u.fileStorage.GetURL(ctx, *userProfile.Avatar, time.Hour*24)
 	if err != nil {
 		return domain.SecureUserProfile{}, err
 	}
+
+	userProfile.Avatar = &tempAvatar
 
 	return userProfile, nil
 }

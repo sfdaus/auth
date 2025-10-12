@@ -59,22 +59,22 @@ type UpdateProfile struct {
 	BirthDate     time.Time `json:"birth_date"`
 	SlugName      string    `json:"slug_name"`
 	AboutMe       *string   `json:"about_me"`
-	InstitutionID string    `json:"institution_id"`
+	InstitutionID *string   `json:"institution_id"`
 	UpdatedAt     int64     `json:"updated_at"`
 	UpdatedBy     string    `json:"updated_by"`
 	Linkedin      *string   `json:"linkedin"`
 }
 
 type SecureUserProfile struct {
-	Name          string `json:"name"`
-	NameAlias     string `json:"name_alias"`
-	Avatar        string `json:"avatar"`
-	SlugName      string `json:"slug_name"`
-	AboutMe       string `json:"about_me"`
-	InstitutionID string `json:"institution_id"`
-	JoinedAt      int64  `json:"joined_at"`
-	Linkedin      string `json:"linkedin"`
-	IsMyProfile   bool   `json:"is_my_profile"`
+	Name          string  `json:"name"`
+	NameAlias     string  `json:"name_alias"`
+	Avatar        *string `json:"avatar"`
+	SlugName      string  `json:"slug_name"`
+	AboutMe       *string `json:"about_me"`
+	InstitutionID string  `json:"institution_id"`
+	JoinedAt      int64   `json:"joined_at"`
+	Linkedin      *string `json:"linkedin"`
+	IsMyProfile   bool    `json:"is_my_profile"`
 }
 
 type ProfileRepository interface {

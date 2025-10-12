@@ -112,8 +112,12 @@ func (r *pgsqlProfileRepository) UpdateProfile(ctx context.Context, userID strin
 	}
 
 	// ---------- Institution ----------
-	if updateProfile.InstitutionID != "" {
-		setVal("institution_id", updateProfile.InstitutionID)
+	if updateProfile.InstitutionID != nil {
+		if *updateProfile.InstitutionID == "" {
+			setNull("institution_id")
+		} else {
+			setVal("institution_id", *updateProfile.InstitutionID)
+		}
 	}
 
 	// ---------- Linkedin ----------
