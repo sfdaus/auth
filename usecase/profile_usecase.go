@@ -210,10 +210,12 @@ func (u *profileUsecase) UserProfileByID(ctx context.Context, request *request.U
 		return domain.SecureUserProfile{}, err
 	}
 
-	userProfile.Avatar, err = u.fileStorage.GetURL(ctx, userProfile.Avatar, time.Hour*24)
+	tempAvatar, err := u.fileStorage.GetURL(ctx, *userProfile.Avatar, time.Hour*24)
 	if err != nil {
 		return domain.SecureUserProfile{}, err
 	}
+
+	userProfile.Avatar = &tempAvatar
 
 	return userProfile, nil
 }

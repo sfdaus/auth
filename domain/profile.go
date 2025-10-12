@@ -66,15 +66,15 @@ type UpdateProfile struct {
 }
 
 type SecureUserProfile struct {
-	Name          string `json:"name"`
-	NameAlias     string `json:"name_alias"`
-	Avatar        string `json:"avatar"`
-	SlugName      string `json:"slug_name"`
-	AboutMe       string `json:"about_me"`
-	InstitutionID string `json:"institution_id"`
-	JoinedAt      int64  `json:"joined_at"`
-	Linkedin      string `json:"linkedin"`
-	IsMyProfile   bool   `json:"is_my_profile"`
+	Name          string  `json:"name"`
+	NameAlias     string  `json:"name_alias"`
+	Avatar        *string `json:"avatar"`
+	SlugName      string  `json:"slug_name"`
+	AboutMe       *string `json:"about_me"`
+	InstitutionID string  `json:"institution_id"`
+	JoinedAt      int64   `json:"joined_at"`
+	Linkedin      *string `json:"linkedin"`
+	IsMyProfile   bool    `json:"is_my_profile"`
 }
 
 type ProfileRepository interface {
