@@ -127,10 +127,9 @@ func (u *profileUsecase) UpdateProfile(ctx context.Context, userID string, reque
 	var empty = ""
 
 	updateProfilePayload := &domain.UpdateProfile{
-		Gender:        request.Gender,
-		InstitutionID: request.InstitutionID,
-		UpdatedAt:     time.Now().Unix(),
-		UpdatedBy:     profile.UserID,
+		Gender:    request.Gender,
+		UpdatedAt: time.Now().Unix(),
+		UpdatedBy: profile.UserID,
 	}
 
 	if request.BirthDate != "" {
@@ -180,6 +179,12 @@ func (u *profileUsecase) UpdateProfile(ctx context.Context, userID string, reque
 		updateProfilePayload.Linkedin = &empty
 	} else if request.Linkedin != "" {
 		updateProfilePayload.Linkedin = &request.Linkedin
+	}
+
+	if request.InstitutionDelete != nil && utils.AsBool(request.InstitutionDelete) {
+		updateProfilePayload.InstitutionID = &empty
+	} else if request.InstitutionID != "" {
+		updateProfilePayload.InstitutionID = &request.InstitutionID
 	}
 
 	err = u.profileRepo.UpdateProfile(ctx, userID, updateProfilePayload)

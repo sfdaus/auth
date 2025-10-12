@@ -59,7 +59,7 @@ type UpdateProfile struct {
 	BirthDate     time.Time `json:"birth_date"`
 	SlugName      string    `json:"slug_name"`
 	AboutMe       *string   `json:"about_me"`
-	InstitutionID string    `json:"institution_id"`
+	InstitutionID *string   `json:"institution_id"`
 	UpdatedAt     int64     `json:"updated_at"`
 	UpdatedBy     string    `json:"updated_by"`
 	Linkedin      *string   `json:"linkedin"`
