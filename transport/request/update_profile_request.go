@@ -12,7 +12,8 @@ type UpdateProfileReq struct {
 	InstitutionID string                `form:"institution_id"`
 	Linkedin      string                `form:"linkedin"`
 
-	AvatarDelete   *string `form:"avatar_delete"`
-	AboutMeDelete  *string `form:"about_me_delete"`
-	LinkedinDelete *string `form:"linkedin_delete"`
+	AvatarDelete      *string `form:"avatar_delete"`
+	AboutMeDelete     *string `form:"about_me_delete"`
+	LinkedinDelete    *string `form:"linkedin_delete"`
+	InstitutionDelete *string `form:"institution_delete"`
 }
