@@ -45,20 +45,27 @@ func (u *forgotpasswordUsecase) ForgotPassword(c context.Context, request *reque
 	ctx, cancel := context.WithTimeout(c, u.contextTimeout)
 	defer cancel()
 
+	var resendAvailableAt = time.Now().Add(constant.FORGOT_PASSWORD_RESEND_AVAILABLE_TIME)
+
 	encryptedMail, _ := utils.EncryptDeterministic(request.Email)
 	user, err := u.userRepo.GetByEmail(ctx, encryptedMail)
 	if err != nil {
 		if err == sql.ErrNoRows {
+			res.AvailableAt = resendAvailableAt
 			return res, nil
 		}
 		return
+	}
+
+	if !user.IsVerified {
+		res.AvailableAt = resendAvailableAt
+		return res, nil
 	}
 
 	verificationToken, _, err := u.jwtSvc.GenerateForgotPasswordToken(ctx, user.ID)
 
 	// Check Limiter on Redis
 	var resendCount int64
-	var resendAvailableAt = time.Now().Add(constant.FORGOT_PASSWORD_RESEND_AVAILABLE_TIME)
 
 	redisValue, _ := u.redisRepo.Get(fmt.Sprintf("%s:%s", constant.FORGOT_PASSWORD_REDIS_KEY, user.ID))
 
